@@ -37,8 +37,11 @@ class School(db.Model):
     motto = db.Column(db.String(200), default="Excellence in Education")
     logo = db.Column(db.String(200))
     address = db.Column(db.String(250))
+    location = db.Column(db.String(200))
     phone = db.Column(db.String(50))
+    email = db.Column(db.String(120))
     admin_code_hash = db.Column(db.String(256))
+    primary_color = db.Column(db.String(7), default="#4f46e5")
     payment_mobile_money = db.Column(db.String(255))
     payment_bank_name = db.Column(db.String(120))
     payment_bank_account = db.Column(db.String(120))
@@ -324,9 +327,14 @@ def register():
                 name=school_name,
                 motto=request.form.get('school_motto', '').strip(),
                 address=request.form.get('school_address', '').strip(),
+                location=request.form.get('school_location', '').strip(),
                 phone=request.form.get('school_phone', '').strip(),
+                email=request.form.get('school_email', '').strip().lower(),
+                primary_color=request.form.get('school_primary_color', '#4f46e5').strip(),
                 admin_code_hash=generate_password_hash(school_admin_code)
             )
+            if 'school_logo' in request.files:
+                school.logo = save_photo(request.files['school_logo']) or school.logo
             db.session.add(school)
             db.session.commit()
             role = 'admin'
@@ -449,7 +457,12 @@ def school_settings():
         school.name = request.form.get('name', school.name)
         school.motto = request.form.get('motto', school.motto)
         school.address = request.form.get('address', school.address)
+        school.location = request.form.get('location', school.location)
         school.phone = request.form.get('phone', school.phone)
+        school.email = request.form.get('email', school.email)
+        color = request.form.get('primary_color', '').strip()
+        if color:
+            school.primary_color = color
         school.payment_mobile_money = request.form.get('payment_mobile_money', school.payment_mobile_money)
         school.payment_bank_name = request.form.get('payment_bank_name', school.payment_bank_name)
         school.payment_bank_account = request.form.get('payment_bank_account', school.payment_bank_account)
@@ -815,6 +828,9 @@ def migrate_db():
             ('payment_bank_name', 'VARCHAR(120)'),
             ('payment_bank_account', 'VARCHAR(120)'),
             ('payment_bank_holder', 'VARCHAR(120)'),
+            ('email', 'VARCHAR(120)'),
+            ('location', 'VARCHAR(200)'),
+            ('primary_color', 'VARCHAR(7)'),
         ]
         for col, dtype in additions:
             if col not in cols:
@@ -831,6 +847,11 @@ with app.app_context():
         school = School(
             name="Demo School",
             motto="Excellence in Education",
+            email="admin@school.com",
+            location="Accra, Ghana",
+            address="123 Education Street",
+            phone="+233 00 000 0000",
+            primary_color="#4f46e5",
             admin_code_hash=generate_password_hash(default_code)
         )
         db.session.add(school)
