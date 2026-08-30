@@ -32,17 +32,18 @@ def allowed_file(filename):
 
 class School(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False, default="My School")
+    name = db.Column(db.String(120), nullable=False)
     motto = db.Column(db.String(200), default="Excellence in Education")
     logo = db.Column(db.String(200))
     address = db.Column(db.String(250))
     phone = db.Column(db.String(50))
+    admin_code_hash = db.Column(db.String(256))
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(50))
     role = db.Column(db.String(20), nullable=False)  # admin, teacher, student, parent
     password_hash = db.Column(db.String(256), nullable=False)
@@ -50,9 +51,11 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     class_id = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
+    school = db.relationship('School', backref='users')
     children = db.relationship('User', backref=db.backref('parent', remote_side=[id]))
 
     @property
@@ -61,38 +64,47 @@ class User(UserMixin, db.Model):
 
 class Class(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     name = db.Column(db.String(80), nullable=False)
     section = db.Column(db.String(20))
+    school = db.relationship('School', backref='classes')
     students = db.relationship('User', backref='class_', foreign_keys='User.class_id')
 
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     name = db.Column(db.String(80), nullable=False)
     code = db.Column(db.String(20))
+    school = db.relationship('School', backref='subjects')
 
 class ClassSubject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     class_id = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    school = db.relationship('School', backref='class_subjects')
     class_ = db.relationship('Class', backref='class_subjects')
     subject = db.relationship('Subject', backref='class_subjects')
     teacher = db.relationship('User', backref='assigned_subjects')
 
 class Timetable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     class_id = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     day = db.Column(db.String(10), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
+    school = db.relationship('School', backref='timetable_entries')
     class_ = db.relationship('Class', backref='timetable_entries')
     subject = db.relationship('Subject', backref='timetable_entries')
     teacher = db.relationship('User', backref='timetable_entries')
 
 class Mark(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -101,12 +113,14 @@ class Mark(db.Model):
     score = db.Column(db.Float, nullable=False)
     total = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, default=date.today)
+    school = db.relationship('School', backref='marks')
     student = db.relationship('User', foreign_keys=[student_id], backref='marks_received')
     subject = db.relationship('Subject', backref='marks')
     teacher = db.relationship('User', foreign_keys=[teacher_id], backref='marks_given')
 
 class Exam(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     title = db.Column(db.String(120), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     class_id = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=False)
@@ -114,10 +128,11 @@ class Exam(db.Model):
     duration = db.Column(db.Integer, default=30)  # minutes
     is_published = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    questions = db.relationship('Question', backref='exam', lazy=True, cascade='all, delete-orphan')
+    school = db.relationship('School', backref='exams')
     subject = db.relationship('Subject', backref='exams')
     class_ = db.relationship('Class', backref='exams')
     teacher = db.relationship('User', backref='exams_created')
+    questions = db.relationship('Question', backref='exam', lazy=True, cascade='all, delete-orphan')
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -131,32 +146,38 @@ class Question(db.Model):
 
 class StudentAnswer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     selected_option = db.Column(db.String(1))
+    school = db.relationship('School', backref='student_answers')
     exam = db.relationship('Exam', backref='student_answers')
     question = db.relationship('Question', backref='student_answers')
     student = db.relationship('User', backref='student_answers')
 
 class ExamAttempt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     score = db.Column(db.Float, default=0)
     total = db.Column(db.Float, default=0)
     completed_at = db.Column(db.DateTime)
+    school = db.relationship('School', backref='exam_attempts')
     exam = db.relationship('Exam', backref='attempts')
     student = db.relationship('User', backref='exam_attempts')
 
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     method = db.Column(db.String(30), nullable=False)  # mobile_money, bank_transfer
-    transaction_ref = db.Column(db.String(100), unique=True)
+    transaction_ref = db.Column(db.String(100))
     status = db.Column(db.String(20), default='pending')  # pending, success, failed
     date = db.Column(db.DateTime, default=datetime.utcnow)
+    school = db.relationship('School', backref='payments')
     user = db.relationship('User', backref='payments')
 
 class Renewal(db.Model):
@@ -171,11 +192,13 @@ class Renewal(db.Model):
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     is_read = db.Column(db.Boolean, default=False)
+    school = db.relationship('School', backref='messages')
     sender = db.relationship('User', foreign_keys=[sender_id], backref='messages_sent')
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref='messages_received')
 
@@ -200,12 +223,9 @@ def role_required(*roles):
     return decorator
 
 def get_school():
-    school = School.query.first()
-    if not school:
-        school = School(name="My School")
-        db.session.add(school)
-        db.session.commit()
-    return school
+    if current_user.is_authenticated and current_user.school:
+        return current_user.school
+    return School.query.first()
 
 def save_photo(file):
     if file and allowed_file(file.filename):
@@ -216,8 +236,10 @@ def save_photo(file):
     return None
 
 def can_chat(sender, receiver):
-    """Enforce role-based chat rules."""
+    """Enforce role-based chat rules within the same school."""
     if sender.id == receiver.id:
+        return False
+    if sender.school_id != receiver.school_id:
         return False
     if sender.role == 'admin':
         return receiver.role == 'teacher'
@@ -229,14 +251,14 @@ def can_chat(sender, receiver):
         return receiver.role == 'teacher'
     return False
 
-def aggregate_student_marks(student_id):
+def aggregate_student_marks(student_id, school_id):
     from sqlalchemy import func
     rows = db.session.query(
         Subject.id, Subject.name,
         func.avg(Mark.score / Mark.total * 100).label('avg_pct'),
         func.count(Mark.id).label('count')
     ).join(Mark, Mark.subject_id == Subject.id)\
-     .filter(Mark.student_id == student_id)\
+     .filter(Mark.student_id == student_id, Mark.school_id == school_id)\
      .group_by(Subject.id, Subject.name).all()
     result = []
     total = 0
@@ -261,7 +283,7 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    classes = Class.query.all()
+    schools = School.query.order_by(School.name).all()
     if request.method == 'POST':
         first = request.form.get('first_name', '').strip()
         last = request.form.get('last_name', '').strip()
@@ -269,30 +291,61 @@ def register():
         phone = request.form.get('phone', '').strip()
         role = request.form.get('role')
         password = request.form.get('password')
+        action = request.form.get('school_action', 'join')
         class_id = request.form.get('class_id') or None
         parent_email = request.form.get('parent_email', '').strip().lower()
-        admin_code = request.form.get('admin_code', '').strip()
+        admin_code = request.form.get('admin_code', '').strip() if action == 'join' else ''
+        school_admin_code = request.form.get('school_admin_code', '').strip() if action == 'create' else ''
 
         if not all([first, last, email, role, password]):
-            flash('Please fill all required fields.', 'warning')
+            flash('Please fill all required user fields.', 'warning')
             return redirect(url_for('register'))
+
+        # Email uniqueness can be scoped per school, but keep global to avoid collisions
         if User.query.filter_by(email=email).first():
             flash('Email already registered.', 'danger')
             return redirect(url_for('register'))
-        if role == 'admin' and admin_code != os.environ.get('ADMIN_CODE', 'admin123'):
-            flash('Invalid admin registration code.', 'danger')
-            return redirect(url_for('register'))
+
+        school = None
+        if action == 'create':
+            school_name = request.form.get('school_name', '').strip()
+            if not school_name:
+                flash('School name is required to register a new school.', 'warning')
+                return redirect(url_for('register'))
+            if not school_admin_code:
+                flash('Please set an admin code for the new school.', 'warning')
+                return redirect(url_for('register'))
+            school = School(
+                name=school_name,
+                motto=request.form.get('school_motto', '').strip(),
+                address=request.form.get('school_address', '').strip(),
+                phone=request.form.get('school_phone', '').strip(),
+                admin_code_hash=generate_password_hash(school_admin_code)
+            )
+            db.session.add(school)
+            db.session.commit()
+            role = 'admin'
+        else:
+            school_id = request.form.get('school_id', type=int)
+            school = School.query.get(school_id)
+            if not school:
+                flash('Please select a school.', 'warning')
+                return redirect(url_for('register'))
+            if role == 'admin':
+                if not school.admin_code_hash or not check_password_hash(school.admin_code_hash, admin_code):
+                    flash('Invalid admin code for this school.', 'danger')
+                    return redirect(url_for('register'))
 
         parent = None
         if parent_email:
-            parent = User.query.filter_by(email=parent_email, role='parent').first()
+            parent = User.query.filter_by(email=parent_email, role='parent', school_id=school.id).first()
             if not parent:
-                flash('Parent email not found.', 'warning')
+                flash('Parent email not found in this school.', 'warning')
 
         user = User(
             first_name=first, last_name=last, email=email, phone=phone,
             role=role, password_hash=generate_password_hash(password),
-            class_id=class_id, parent_id=parent.id if parent else None
+            school_id=school.id, class_id=class_id, parent_id=parent.id if parent else None
         )
         if 'photo' in request.files:
             user.photo = save_photo(request.files['photo'])
@@ -300,7 +353,7 @@ def register():
         db.session.commit()
         flash('Registration successful. Please log in.', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html', classes=classes)
+    return render_template('register.html', schools=schools)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -325,34 +378,35 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    sid = current_user.school_id
     if current_user.role == 'admin':
         counts = {
-            'students': User.query.filter_by(role='student').count(),
-            'teachers': User.query.filter_by(role='teacher').count(),
-            'parents': User.query.filter_by(role='parent').count(),
-            'classes': Class.query.count(),
-            'subjects': Subject.query.count(),
-            'payments': Payment.query.count(),
+            'students': User.query.filter_by(role='student', school_id=sid).count(),
+            'teachers': User.query.filter_by(role='teacher', school_id=sid).count(),
+            'parents': User.query.filter_by(role='parent', school_id=sid).count(),
+            'classes': Class.query.filter_by(school_id=sid).count(),
+            'subjects': Subject.query.filter_by(school_id=sid).count(),
+            'payments': Payment.query.filter_by(school_id=sid).count(),
         }
         return render_template('dashboard.html', counts=counts)
     if current_user.role == 'teacher':
-        classes = Class.query.all()
+        classes = Class.query.filter_by(school_id=sid).all()
         subjects = Subject.query.join(ClassSubject, ClassSubject.subject_id == Subject.id)\
-            .filter(ClassSubject.teacher_id == current_user.id).all()
+            .filter(ClassSubject.teacher_id == current_user.id, ClassSubject.school_id == sid).all()
         return render_template('dashboard.html', classes=classes, subjects=subjects)
     if current_user.role == 'student':
-        courses = ClassSubject.query.filter_by(class_id=current_user.class_id).all()
-        timetable = Timetable.query.filter_by(class_id=current_user.class_id).all()
-        marks, overall = aggregate_student_marks(current_user.id)
-        attempts = ExamAttempt.query.filter_by(student_id=current_user.id).all()
+        courses = ClassSubject.query.filter_by(class_id=current_user.class_id, school_id=sid).all()
+        timetable = Timetable.query.filter_by(class_id=current_user.class_id, school_id=sid).all()
+        marks, overall = aggregate_student_marks(current_user.id, sid)
+        attempts = ExamAttempt.query.filter_by(student_id=current_user.id, school_id=sid).all()
         return render_template('dashboard.html', courses=courses, timetable=timetable,
                                marks=marks, overall=overall, attempts=attempts)
     if current_user.role == 'parent':
-        children = User.query.filter_by(parent_id=current_user.id, role='student').all()
+        children = User.query.filter_by(parent_id=current_user.id, role='student', school_id=sid).all()
         data = []
         for child in children:
-            marks, overall = aggregate_student_marks(child.id)
-            attempts = ExamAttempt.query.filter_by(student_id=child.id).all()
+            marks, overall = aggregate_student_marks(child.id, sid)
+            attempts = ExamAttempt.query.filter_by(student_id=child.id, school_id=sid).all()
             data.append({'child': child, 'marks': marks, 'overall': overall, 'attempts': attempts})
         return render_template('dashboard.html', children_data=data)
     return redirect(url_for('index'))
@@ -388,6 +442,9 @@ def school_settings():
         school.phone = request.form.get('phone', school.phone)
         if 'logo' in request.files:
             school.logo = save_photo(request.files['logo']) or school.logo
+        new_code = request.form.get('admin_code', '').strip()
+        if new_code:
+            school.admin_code_hash = generate_password_hash(new_code)
         db.session.commit()
         flash('School settings updated.', 'success')
         return redirect(url_for('school_settings'))
@@ -396,57 +453,61 @@ def school_settings():
 @app.route('/classes', methods=['GET', 'POST'])
 @login_required
 def classes_view():
+    sid = current_user.school_id
     if current_user.role not in ('admin', 'teacher'):
         abort(403)
     if request.method == 'POST' and current_user.role == 'admin':
         name = request.form.get('name', '').strip()
         section = request.form.get('section', '').strip()
         if name:
-            db.session.add(Class(name=name, section=section))
+            db.session.add(Class(school_id=sid, name=name, section=section))
             db.session.commit()
             flash('Class added.', 'success')
         return redirect(url_for('classes_view'))
-    classes = Class.query.all()
+    classes = Class.query.filter_by(school_id=sid).all()
     return render_template('classes.html', classes=classes)
 
 @app.route('/subjects', methods=['GET', 'POST'])
 @role_required('admin')
 def subjects_view():
+    sid = current_user.school_id
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         code = request.form.get('code', '').strip()
         if name:
-            db.session.add(Subject(name=name, code=code))
+            db.session.add(Subject(school_id=sid, name=name, code=code))
             db.session.commit()
             flash('Subject added.', 'success')
         return redirect(url_for('subjects_view'))
-    subjects = Subject.query.all()
+    subjects = Subject.query.filter_by(school_id=sid).all()
     return render_template('subjects.html', subjects=subjects)
 
 @app.route('/class-subjects', methods=['GET', 'POST'])
 @role_required('admin')
 def class_subjects():
+    sid = current_user.school_id
     if request.method == 'POST':
         class_id = request.form.get('class_id')
         subject_id = request.form.get('subject_id')
         teacher_id = request.form.get('teacher_id')
-        existing = ClassSubject.query.filter_by(class_id=class_id, subject_id=subject_id).first()
+        existing = ClassSubject.query.filter_by(class_id=class_id, subject_id=subject_id, school_id=sid).first()
         if not existing:
-            db.session.add(ClassSubject(class_id=class_id, subject_id=subject_id, teacher_id=teacher_id))
+            db.session.add(ClassSubject(school_id=sid, class_id=class_id, subject_id=subject_id, teacher_id=teacher_id))
             db.session.commit()
             flash('Subject assigned to class.', 'success')
         return redirect(url_for('class_subjects'))
-    data = ClassSubject.query.all()
-    classes = Class.query.all()
-    subjects = Subject.query.all()
-    teachers = User.query.filter_by(role='teacher').all()
+    data = ClassSubject.query.filter_by(school_id=sid).all()
+    classes = Class.query.filter_by(school_id=sid).all()
+    subjects = Subject.query.filter_by(school_id=sid).all()
+    teachers = User.query.filter_by(role='teacher', school_id=sid).all()
     return render_template('class_subjects.html', data=data, classes=classes, subjects=subjects, teachers=teachers)
 
 @app.route('/users')
 @role_required('admin')
 def users_view():
+    sid = current_user.school_id
     role = request.args.get('role')
-    q = User.query
+    q = User.query.filter_by(school_id=sid)
     if role:
         q = q.filter_by(role=role)
     users = q.order_by(User.role, User.last_name).all()
@@ -455,6 +516,7 @@ def users_view():
 @app.route('/timetable', methods=['GET', 'POST'])
 @login_required
 def timetable_view():
+    sid = current_user.school_id
     if current_user.role not in ('admin', 'teacher'):
         abort(403)
     if request.method == 'POST':
@@ -464,15 +526,15 @@ def timetable_view():
         day = request.form.get('day')
         start = datetime.strptime(request.form.get('start_time'), '%H:%M').time()
         end = datetime.strptime(request.form.get('end_time'), '%H:%M').time()
-        db.session.add(Timetable(class_id=class_id, subject_id=subject_id, teacher_id=teacher_id,
+        db.session.add(Timetable(school_id=sid, class_id=class_id, subject_id=subject_id, teacher_id=teacher_id,
                                  day=day, start_time=start, end_time=end))
         db.session.commit()
         flash('Timetable entry added.', 'success')
         return redirect(url_for('timetable_view'))
-    entries = Timetable.query.order_by(Timetable.day, Timetable.start_time).all()
-    classes = Class.query.all()
-    subjects = Subject.query.all()
-    teachers = User.query.filter_by(role='teacher').all()
+    entries = Timetable.query.filter_by(school_id=sid).order_by(Timetable.day, Timetable.start_time).all()
+    classes = Class.query.filter_by(school_id=sid).all()
+    subjects = Subject.query.filter_by(school_id=sid).all()
+    teachers = User.query.filter_by(role='teacher', school_id=sid).all()
     return render_template('timetable.html', entries=entries, classes=classes, subjects=subjects, teachers=teachers)
 
 # ---------------------------------------------------------------------------
@@ -482,6 +544,7 @@ def timetable_view():
 @app.route('/marks', methods=['GET', 'POST'])
 @login_required
 def marks_view():
+    sid = current_user.school_id
     if current_user.role == 'teacher':
         if request.method == 'POST':
             student_id = request.form.get('student_id')
@@ -490,15 +553,15 @@ def marks_view():
             title = request.form.get('title', '').strip()
             score = float(request.form.get('score', 0))
             total = float(request.form.get('total', 100))
-            db.session.add(Mark(student_id=student_id, subject_id=subject_id, teacher_id=current_user.id,
+            db.session.add(Mark(school_id=sid, student_id=student_id, subject_id=subject_id, teacher_id=current_user.id,
                                 type=type_, title=title, score=score, total=total))
             db.session.commit()
             flash('Mark recorded.', 'success')
             return redirect(url_for('marks_view'))
-        students = User.query.filter_by(role='student').all()
+        students = User.query.filter_by(role='student', school_id=sid).all()
         subjects = Subject.query.join(ClassSubject, ClassSubject.subject_id == Subject.id)\
-            .filter(ClassSubject.teacher_id == current_user.id).all()
-        marks = Mark.query.filter_by(teacher_id=current_user.id).order_by(Mark.date.desc()).all()
+            .filter(ClassSubject.teacher_id == current_user.id, ClassSubject.school_id == sid).all()
+        marks = Mark.query.filter_by(teacher_id=current_user.id, school_id=sid).order_by(Mark.date.desc()).all()
         return render_template('marks.html', students=students, subjects=subjects, marks=marks)
     if current_user.role in ('student', 'parent'):
         if current_user.role == 'student':
@@ -506,9 +569,9 @@ def marks_view():
         else:
             student_id = request.args.get('student_id', type=int)
             if not student_id:
-                children = User.query.filter_by(parent_id=current_user.id, role='student').all()
+                children = User.query.filter_by(parent_id=current_user.id, role='student', school_id=sid).all()
                 return render_template('marks.html', children=children, report=False)
-        marks, overall = aggregate_student_marks(student_id)
+        marks, overall = aggregate_student_marks(student_id, sid)
         return render_template('marks.html', marks=marks, overall=overall, report=True)
     abort(403)
 
@@ -519,44 +582,45 @@ def marks_view():
 @app.route('/exams', methods=['GET', 'POST'])
 @login_required
 def exams_view():
+    sid = current_user.school_id
     if current_user.role == 'teacher':
         if request.method == 'POST':
             title = request.form.get('title', '').strip()
             subject_id = request.form.get('subject_id')
             class_id = request.form.get('class_id')
             duration = request.form.get('duration', 30, type=int) or 30
-            exam = Exam(title=title, subject_id=subject_id, class_id=class_id,
+            exam = Exam(school_id=sid, title=title, subject_id=subject_id, class_id=class_id,
                         teacher_id=current_user.id, duration=duration)
             db.session.add(exam)
             db.session.commit()
             return redirect(url_for('exam_questions', exam_id=exam.id))
-        exams = Exam.query.filter_by(teacher_id=current_user.id).all()
+        exams = Exam.query.filter_by(teacher_id=current_user.id, school_id=sid).all()
         subjects = Subject.query.join(ClassSubject, ClassSubject.subject_id == Subject.id)\
-            .filter(ClassSubject.teacher_id == current_user.id).all()
-        classes = Class.query.all()
+            .filter(ClassSubject.teacher_id == current_user.id, ClassSubject.school_id == sid).all()
+        classes = Class.query.filter_by(school_id=sid).all()
         return render_template('exams.html', exams=exams, subjects=subjects, classes=classes)
     if current_user.role == 'student':
-        exams = Exam.query.filter_by(class_id=current_user.class_id, is_published=True).all()
+        exams = Exam.query.filter_by(class_id=current_user.class_id, is_published=True, school_id=sid).all()
         return render_template('exams.html', exams=exams, mode='student')
     if current_user.role == 'parent':
-        children = User.query.filter_by(parent_id=current_user.id, role='student').all()
+        children = User.query.filter_by(parent_id=current_user.id, role='student', school_id=sid).all()
         return render_template('exams.html', children=children, mode='parent')
     if current_user.role == 'admin':
-        exams = Exam.query.all()
+        exams = Exam.query.filter_by(school_id=sid).all()
         return render_template('exams.html', exams=exams, mode='admin')
     abort(403)
 
 @app.route('/exams/<int:exam_id>/questions', methods=['GET', 'POST'])
 @role_required('teacher')
 def exam_questions(exam_id):
-    exam = Exam.query.get_or_404(exam_id)
+    exam = Exam.query.filter_by(id=exam_id, school_id=current_user.school_id).first_or_404()
     if request.method == 'POST':
         text = request.form.get('text', '').strip()
         a = request.form.get('option_a', '').strip()
         b = request.form.get('option_b', '').strip()
         c = request.form.get('option_c', '').strip()
         d = request.form.get('option_d', '').strip()
-        correct = request.form.get('correct_option')
+        correct = (request.form.get('correct_option') or '').strip().upper()
         db.session.add(Question(exam_id=exam.id, text=text, option_a=a, option_b=b, option_c=c, option_d=d,
                                 correct_option=correct))
         db.session.commit()
@@ -567,7 +631,7 @@ def exam_questions(exam_id):
 @app.route('/exams/<int:exam_id>/publish')
 @role_required('teacher')
 def publish_exam(exam_id):
-    exam = Exam.query.get_or_404(exam_id)
+    exam = Exam.query.filter_by(id=exam_id, school_id=current_user.school_id).first_or_404()
     exam.is_published = True
     db.session.commit()
     flash('Exam published.', 'success')
@@ -576,8 +640,9 @@ def publish_exam(exam_id):
 @app.route('/exams/<int:exam_id>/take', methods=['GET', 'POST'])
 @role_required('student')
 def take_exam(exam_id):
-    exam = Exam.query.get_or_404(exam_id)
-    if exam.class_id != current_user.class_id or not exam.is_published:
+    sid = current_user.school_id
+    exam = Exam.query.filter_by(id=exam_id, school_id=sid, is_published=True).first_or_404()
+    if exam.class_id != current_user.class_id:
         abort(403)
     attempt = ExamAttempt.query.filter_by(exam_id=exam.id, student_id=current_user.id).first()
     if attempt:
@@ -587,12 +652,12 @@ def take_exam(exam_id):
         total = len(exam.questions)
         for q in exam.questions:
             selected = request.form.get(f'q_{q.id}')
-            db.session.add(StudentAnswer(exam_id=exam.id, question_id=q.id,
+            db.session.add(StudentAnswer(school_id=sid, exam_id=exam.id, question_id=q.id,
                                          student_id=current_user.id, selected_option=selected))
-            if selected == q.correct_option:
+            if selected and selected.upper() == (q.correct_option or '').upper():
                 correct += 1
         score = correct
-        db.session.add(ExamAttempt(exam_id=exam.id, student_id=current_user.id,
+        db.session.add(ExamAttempt(school_id=sid, exam_id=exam.id, student_id=current_user.id,
                                    score=score, total=total, completed_at=datetime.utcnow()))
         db.session.commit()
         flash('Exam submitted.', 'success')
@@ -602,27 +667,29 @@ def take_exam(exam_id):
 @app.route('/exams/<int:exam_id>/result')
 @login_required
 def exam_result(exam_id):
-    exam = Exam.query.get_or_404(exam_id)
+    sid = current_user.school_id
+    exam = Exam.query.filter_by(id=exam_id, school_id=sid).first_or_404()
     student_id = request.args.get('student_id', type=int) or current_user.id
     if current_user.role == 'parent':
-        child = User.query.filter_by(id=student_id, parent_id=current_user.id, role='student').first()
+        child = User.query.filter_by(id=student_id, parent_id=current_user.id, role='student', school_id=sid).first()
         if not child:
             abort(403)
     if current_user.role == 'student' and student_id != current_user.id:
         abort(403)
-    if current_user.role == 'teacher' and exam.teacher_id != current_user.id:
+    if current_user.role == 'teacher' and (exam.teacher_id != current_user.id or exam.school_id != sid):
         abort(403)
-    attempt = ExamAttempt.query.filter_by(exam_id=exam.id, student_id=student_id).first_or_404()
-    answers = StudentAnswer.query.filter_by(exam_id=exam.id, student_id=student_id).all()
+    attempt = ExamAttempt.query.filter_by(exam_id=exam.id, student_id=student_id, school_id=sid).first_or_404()
+    answers = StudentAnswer.query.filter_by(exam_id=exam.id, student_id=student_id, school_id=sid).all()
     return render_template('exam_result.html', exam=exam, attempt=attempt, answers=answers)
 
 @app.route('/exams/<int:exam_id>/report')
 @login_required
 def exam_report(exam_id):
-    exam = Exam.query.get_or_404(exam_id)
-    if current_user.role not in ('admin', 'teacher') and not (current_user.role == 'parent' and request.args.get('student_id')):
+    sid = current_user.school_id
+    exam = Exam.query.filter_by(id=exam_id, school_id=sid).first_or_404()
+    if current_user.role not in ('admin', 'teacher'):
         abort(403)
-    attempts = ExamAttempt.query.filter_by(exam_id=exam.id).all()
+    attempts = ExamAttempt.query.filter_by(exam_id=exam.id, school_id=sid).all()
     return render_template('exam_report.html', exam=exam, attempts=attempts)
 
 # ---------------------------------------------------------------------------
@@ -632,15 +699,16 @@ def exam_report(exam_id):
 @app.route('/payments', methods=['GET', 'POST'])
 @login_required
 def payments_view():
+    sid = current_user.school_id
     if current_user.role == 'admin':
-        payments = Payment.query.order_by(Payment.date.desc()).all()
+        payments = Payment.query.filter_by(school_id=sid).order_by(Payment.date.desc()).all()
         if request.method == 'POST':
-            p = Payment.query.get_or_404(request.form.get('payment_id'))
+            p = Payment.query.filter_by(id=request.form.get('payment_id'), school_id=sid).first_or_404()
             p.status = request.form.get('status')
             db.session.commit()
             flash('Payment status updated.', 'success')
             return redirect(url_for('payments_view'))
-        return render_template('payments.html', payments=payments, admin=True)
+        return render_template('payments.html', payments=payments)
     if request.method == 'POST':
         amount = float(request.form.get('amount', 0))
         method = request.form.get('method')
@@ -648,18 +716,19 @@ def payments_view():
         if amount <= 0 or not method:
             flash('Invalid payment details.', 'warning')
             return redirect(url_for('payments_view'))
-        db.session.add(Payment(user_id=current_user.id, amount=amount, method=method,
+        db.session.add(Payment(school_id=sid, user_id=current_user.id, amount=amount, method=method,
                                transaction_ref=ref, status='pending'))
         db.session.commit()
         flash('Payment submitted. Pending approval.', 'info')
         return redirect(url_for('payments_view'))
-    payments = Payment.query.filter_by(user_id=current_user.id).order_by(Payment.date.desc()).all()
+    payments = Payment.query.filter_by(user_id=current_user.id, school_id=sid).order_by(Payment.date.desc()).all()
     return render_template('payments.html', payments=payments)
 
 @app.route('/renewals', methods=['GET', 'POST'])
 @role_required('admin')
 def renewals_view():
     school = get_school()
+    sid = current_user.school_id
     if request.method == 'POST':
         start = datetime.strptime(request.form.get('start_date'), '%Y-%m-%d').date()
         end = datetime.strptime(request.form.get('end_date'), '%Y-%m-%d').date()
@@ -668,11 +737,11 @@ def renewals_view():
         if not (180 <= delta <= 183):
             flash('Renewal period must be 6 months (180-183 days).', 'danger')
             return redirect(url_for('renewals_view'))
-        db.session.add(Renewal(school_id=school.id, start_date=start, end_date=end, amount=amount))
+        db.session.add(Renewal(school_id=sid, start_date=start, end_date=end, amount=amount))
         db.session.commit()
         flash('Renewal recorded.', 'success')
         return redirect(url_for('renewals_view'))
-    renewals = Renewal.query.filter_by(school_id=school.id).order_by(Renewal.start_date.desc()).all()
+    renewals = Renewal.query.filter_by(school_id=sid).order_by(Renewal.start_date.desc()).all()
     return render_template('renewals.html', renewals=renewals)
 
 # ---------------------------------------------------------------------------
@@ -682,30 +751,30 @@ def renewals_view():
 @app.route('/chat', methods=['GET', 'POST'])
 @login_required
 def chat_view():
+    sid = current_user.school_id
     receiver_id = request.args.get('user', type=int)
     receiver = None
     messages = []
     if receiver_id:
-        receiver = User.query.get_or_404(receiver_id)
+        receiver = User.query.filter_by(id=receiver_id, school_id=sid).first_or_404()
         if not can_chat(current_user, receiver):
             abort(403)
         messages = ChatMessage.query.filter(
             ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == receiver_id)) |
             ((ChatMessage.sender_id == receiver_id) & (ChatMessage.receiver_id == current_user.id))
-        ).order_by(ChatMessage.timestamp).all()
-        ChatMessage.query.filter_by(sender_id=receiver_id, receiver_id=current_user.id, is_read=False)\
+        ).filter(ChatMessage.school_id == sid).order_by(ChatMessage.timestamp).all()
+        ChatMessage.query.filter_by(sender_id=receiver_id, receiver_id=current_user.id, school_id=sid, is_read=False)\
             .update({'is_read': True})
         db.session.commit()
     if request.method == 'POST':
         receiver_id = request.form.get('receiver_id', type=int)
         text = request.form.get('message', '').strip()
-        receiver = User.query.get_or_404(receiver_id)
+        receiver = User.query.filter_by(id=receiver_id, school_id=sid).first_or_404()
         if text and can_chat(current_user, receiver):
-            db.session.add(ChatMessage(sender_id=current_user.id, receiver_id=receiver_id, message=text))
+            db.session.add(ChatMessage(school_id=sid, sender_id=current_user.id, receiver_id=receiver_id, message=text))
             db.session.commit()
         return redirect(url_for('chat_view', user=receiver_id))
 
-    # Determine allowed chat partners
     role_filter = []
     if current_user.role == 'admin':
         role_filter.append('teacher')
@@ -715,7 +784,7 @@ def chat_view():
         role_filter = ['student', 'teacher']
     elif current_user.role == 'parent':
         role_filter = ['teacher']
-    users = User.query.filter(User.role.in_(role_filter), User.id != current_user.id).all()
+    users = User.query.filter(User.role.in_(role_filter), User.id != current_user.id, User.school_id == sid).all()
     return render_template('chat.html', users=users, receiver=receiver, messages=messages)
 
 # ---------------------------------------------------------------------------
@@ -724,16 +793,21 @@ def chat_view():
 
 with app.app_context():
     db.create_all()
-    school = School.query.first()
-    if not school:
-        school = School(name="My School", motto="Excellence in Education")
+    if not School.query.first():
+        default_code = os.environ.get('ADMIN_CODE', 'admin123')
+        school = School(
+            name="Demo School",
+            motto="Excellence in Education",
+            admin_code_hash=generate_password_hash(default_code)
+        )
         db.session.add(school)
         db.session.commit()
-    if not User.query.filter_by(role='admin').first():
-        admin = User(first_name='System', last_name='Admin', email='admin@school.com',
-                     role='admin', password_hash=generate_password_hash('admin123'))
-        db.session.add(admin)
-        db.session.commit()
+        if not User.query.filter_by(role='admin').first():
+            admin = User(first_name='System', last_name='Admin', email='admin@school.com',
+                         role='admin', password_hash=generate_password_hash('admin123'),
+                         school_id=school.id)
+            db.session.add(admin)
+            db.session.commit()
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')

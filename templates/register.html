@@ -4,6 +4,37 @@
 <div class="max-w-2xl mx-auto card">
     <h2 class="text-2xl font-bold mb-6 text-center">Create an account</h2>
     <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        <div class="p-4 bg-slate-50 rounded-xl space-y-4">
+            <h3 class="font-semibold text-slate-700">School</h3>
+            <div class="flex gap-4">
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="school_action" value="join" checked onchange="toggleSchoolAction()">
+                    <span>Join an existing school</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="school_action" value="create" onchange="toggleSchoolAction()">
+                    <span>Register a new school</span>
+                </label>
+            </div>
+            <div id="joinSchool">
+                <label class="label">School</label>
+                <select name="school_id" class="input">
+                    {% for s in schools %}
+                    <option value="{{ s.id }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="createSchool" class="hidden space-y-3">
+                <div><label class="label">School name</label><input type="text" name="school_name" class="input"></div>
+                <div><label class="label">Motto</label><input type="text" name="school_motto" class="input"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="label">Address</label><input type="text" name="school_address" class="input"></div>
+                    <div><label class="label">Phone</label><input type="text" name="school_phone" class="input"></div>
+                </div>
+                <div><label class="label">Set admin code for this school</label><input type="text" name="school_admin_code" class="input"></div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label class="label">First name</label><input type="text" name="first_name" required class="input"></div>
             <div><label class="label">Last name</label><input type="text" name="last_name" required class="input"></div>
@@ -24,21 +55,18 @@
             </div>
             <div id="classField">
                 <label class="label">Class</label>
-                <select name="class_id" class="input">
+                <select name="class_id" class="input" id="classSelect">
                     <option value="">-- Select class --</option>
-                    {% for c in classes %}
-                    <option value="{{ c.id }}">{{ c.name }} {{ c.section or '' }}</option>
-                    {% endfor %}
                 </select>
             </div>
+        </div>
+        <div id="joinAdminCode" class="hidden">
+            <label class="label">School admin code</label>
+            <input type="text" name="admin_code" class="input" id="joinAdminCodeInput">
         </div>
         <div id="parentField" class="hidden">
             <label class="label">Parent email</label>
             <input type="email" name="parent_email" class="input">
-        </div>
-        <div id="adminCodeField" class="hidden">
-            <label class="label">Admin registration code</label>
-            <input type="text" name="admin_code" class="input">
         </div>
         <div>
             <label class="label">Password</label>
@@ -52,12 +80,37 @@
     </form>
 </div>
 <script>
+function toggleSchoolAction(){
+    var action = document.querySelector('input[name="school_action"]:checked').value;
+    document.getElementById('joinSchool').style.display = (action === 'join') ? 'block' : 'none';
+    document.getElementById('createSchool').style.display = (action === 'create') ? 'block' : 'none';
+    toggleFields();
+}
 function toggleFields(){
     var r = document.getElementById('role').value;
+    var action = document.querySelector('input[name="school_action"]:checked').value;
     document.getElementById('classField').style.display = (r === 'student') ? 'block' : 'none';
     document.getElementById('parentField').style.display = (r === 'student') ? 'block' : 'none';
-    document.getElementById('adminCodeField').style.display = (r === 'admin') ? 'block' : 'none';
+    var adminSection = document.getElementById('joinAdminCode');
+    var adminInput = document.getElementById('joinAdminCodeInput');
+    if (action === 'join' && r === 'admin') {
+        adminSection.style.display = 'block';
+        adminInput.required = true;
+    } else {
+        adminSection.style.display = 'none';
+        adminInput.required = false;
+    }
+    if (action === 'create') {
+        document.getElementById('classField').style.display = 'none';
+        document.getElementById('parentField').style.display = 'none';
+    }
 }
-toggleFields();
+toggleSchoolAction();
+
+// Populate class dropdown based on selected school (basic: reload could do it, but for now keep empty)
+document.querySelector('select[name="school_id"]').addEventListener('change', function(){
+    // In a full SPA this would fetch classes; the server currently sends no classes list.
+    // For now, users select class after admin creates classes.
+});
 </script>
 {% endblock %}

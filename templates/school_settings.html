@@ -9,6 +9,7 @@
         <div><label class="label">Address</label><input type="text" name="address" value="{{ school.address or '' }}" class="input"></div>
         <div><label class="label">Phone</label><input type="text" name="phone" value="{{ school.phone or '' }}" class="input"></div>
         <div><label class="label">Logo</label><input type="file" name="logo" accept="image/*" class="input-file"></div>
+        <div><label class="label">New admin code (leave blank to keep current)</label><input type="text" name="admin_code" class="input"></div>
         <button type="submit" class="btn-primary">Save Settings</button>
     </form>
 </div>
