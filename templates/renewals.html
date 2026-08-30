@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Renewals - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+        <h2 class="text-2xl font-bold mb-4">New Renewal</h2>
+        <p class="text-sm text-slate-600 mb-4">Renewal period must be exactly 6 months (180-183 days).</p>
+        <form method="POST" class="space-y-4">
+            <div><label class="label">Start Date</label><input type="date" name="start_date" required class="input"></div>
+            <div><label class="label">End Date</label><input type="date" name="end_date" required class="input"></div>
+            <div><label class="label">Amount</label><input type="number" step="0.01" name="amount" required class="input"></div>
+            <button type="submit" class="btn-primary w-full">Record Renewal</button>
+        </form>
+    </div>
+    <div class="card">
+        <h2 class="text-2xl font-bold mb-4">Renewal History</h2>
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100"><tr><th>Start</th><th>End</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for r in renewals %}
+                <tr class="border-b"><td>{{ r.start_date }}</td><td>{{ r.end_date }}</td><td>{{ "%.2f"|format(r.amount) }}</td><td class="capitalize">{{ r.status }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

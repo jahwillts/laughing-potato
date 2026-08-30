@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Users - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold">Users</h2>
+        <div class="text-sm text-slate-600">Filter by role to see specific users</div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100"><tr><th>Name</th><th>Email</th><th>Role</th><th>Class</th><th>Photo</th></tr></thead>
+            <tbody>
+                {% for u in users %}
+                <tr class="border-b">
+                    <td>{{ u.full_name }}</td>
+                    <td>{{ u.email }}</td>
+                    <td class="capitalize">{{ u.role }}</td>
+                    <td>{{ u.class_.name if u.class_ else '' }}</td>
+                    <td>{% if u.photo %}<img src="{{ url_for('static', filename=u.photo) }}" class="h-8 w-8 rounded-full object-cover">{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

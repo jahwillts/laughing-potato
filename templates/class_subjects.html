@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Assign Subjects - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h2 class="text-2xl font-bold mb-4">Assign Subjects to Classes</h2>
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <select name="class_id" required class="input"><option value="">Class</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
+        <select name="subject_id" required class="input"><option value="">Subject</option>{% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
+        <select name="teacher_id" required class="input"><option value="">Teacher</option>{% for t in teachers %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}</select>
+        <button type="submit" class="btn-primary">Assign</button>
+    </form>
+    <table class="w-full text-sm">
+        <thead class="bg-slate-100"><tr><th>Class</th><th>Subject</th><th>Teacher</th></tr></thead>
+        <tbody>
+            {% for row in data %}
+            <tr class="border-b"><td>{{ row.class_.name }}</td><td>{{ row.subject.name }}</td><td>{{ row.teacher.full_name }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

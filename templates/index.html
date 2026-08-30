@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-[70vh] flex flex-col items-center justify-center text-center px-4">
+    <h1 class="text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Welcome to {{ school.name }}</h1>
+    <p class="text-xl text-slate-700 max-w-2xl mb-8">A modern, secure, and all-in-one school management platform for administrators, teachers, students, and parents.</p>
+    <div class="flex gap-4 flex-wrap justify-center">
+        <a href="{{ url_for('register') }}" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 shadow-lg transition">Get Started</a>
+        <a href="{{ url_for('login') }}" class="px-8 py-3 glass text-slate-800 rounded-2xl font-semibold hover:bg-white/60 transition">Login</a>
+    </div>
+</div>
+{% endblock %}

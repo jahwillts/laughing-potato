@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Register - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto card">
+    <h2 class="text-2xl font-bold mb-6 text-center">Create an account</h2>
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        <div class="p-4 bg-slate-50 rounded-xl space-y-4">
+            <h3 class="font-semibold text-slate-700">School</h3>
+            <div class="flex gap-4">
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="school_action" value="join" checked onchange="toggleSchoolAction()">
+                    <span>Join an existing school</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="school_action" value="create" onchange="toggleSchoolAction()">
+                    <span>Register a new school</span>
+                </label>
+            </div>
+            <div id="joinSchool">
+                <label class="label">School</label>
+                <select name="school_id" class="input">
+                    {% for s in schools %}
+                    <option value="{{ s.id }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="createSchool" class="hidden space-y-3">
+                <div><label class="label">School name</label><input type="text" name="school_name" class="input"></div>
+                <div><label class="label">Motto</label><input type="text" name="school_motto" class="input"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="label">School email</label><input type="email" name="school_email" class="input"></div>
+                    <div><label class="label">School phone</label><input type="text" name="school_phone" class="input"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="label">Address</label><input type="text" name="school_address" class="input"></div>
+                    <div><label class="label">Location / City</label><input type="text" name="school_location" class="input"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <div><label class="label">Primary brand color</label><input type="color" name="school_primary_color" value="#4f46e5" class="input h-10 p-1"></div>
+                    <div><label class="label">School logo / picture</label><input type="file" name="school_logo" accept="image/*" class="input-file"></div>
+                </div>
+                <div><label class="label">Set admin code for this school</label><input type="text" name="school_admin_code" class="input"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="label">First name</label><input type="text" name="first_name" required class="input"></div>
+            <div><label class="label">Last name</label><input type="text" name="last_name" required class="input"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="label">Email</label><input type="email" name="email" required class="input"></div>
+            <div><label class="label">Phone</label><input type="text" name="phone" class="input"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="label">Role</label>
+                <select name="role" id="role" required class="input" onchange="toggleFields()">
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="parent">Parent</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div id="classField">
+                <label class="label">Class</label>
+                <select name="class_id" class="input" id="classSelect">
+                    <option value="">-- Select class --</option>
+                </select>
+            </div>
+        </div>
+        <div id="joinAdminCode" class="hidden">
+            <label class="label">School admin code</label>
+            <input type="text" name="admin_code" class="input" id="joinAdminCodeInput">
+        </div>
+        <div id="parentField" class="hidden">
+            <label class="label">Parent email</label>
+            <input type="email" name="parent_email" class="input">
+        </div>
+        <div>
+            <label class="label">Password</label>
+            <input type="password" name="password" required class="input">
+        </div>
+        <div>
+            <label class="label">Profile photo</label>
+            <input type="file" name="photo" accept="image/*" class="input-file">
+        </div>
+        <button type="submit" class="btn-primary w-full">Register</button>
+    </form>
+</div>
+<script>
+function toggleSchoolAction(){
+    var action = document.querySelector('input[name="school_action"]:checked').value;
+    document.getElementById('joinSchool').style.display = (action === 'join') ? 'block' : 'none';
+    document.getElementById('createSchool').style.display = (action === 'create') ? 'block' : 'none';
+    toggleFields();
+}
+function toggleFields(){
+    var r = document.getElementById('role').value;
+    var action = document.querySelector('input[name="school_action"]:checked').value;
+    document.getElementById('classField').style.display = (r === 'student') ? 'block' : 'none';
+    document.getElementById('parentField').style.display = (r === 'student') ? 'block' : 'none';
+    var adminSection = document.getElementById('joinAdminCode');
+    var adminInput = document.getElementById('joinAdminCodeInput');
+    if (action === 'join' && r === 'admin') {
+        adminSection.style.display = 'block';
+        adminInput.required = true;
+    } else {
+        adminSection.style.display = 'none';
+        adminInput.required = false;
+    }
+    if (action === 'create') {
+        document.getElementById('classField').style.display = 'none';
+        document.getElementById('parentField').style.display = 'none';
+    }
+}
+async function loadClasses(){
+    var schoolSelect = document.querySelector('select[name="school_id"]');
+    var classSelect = document.getElementById('classSelect');
+    var sid = schoolSelect ? schoolSelect.value : '';
+    classSelect.innerHTML = '<option value="">-- Select class --</option>';
+    if (!sid) return;
+    try {
+        var url = "{{ url_for('school_classes', school_id=0) }}".replace('0', sid);
+        var res = await fetch(url);
+        var classes = await res.json();
+        classes.forEach(function(c){
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            classSelect.appendChild(opt);
+        });
+    } catch (e) {}
+}
+function init(){
+    toggleSchoolAction();
+    loadClasses();
+    var schoolSelect = document.querySelector('select[name="school_id"]');
+    if (schoolSelect) schoolSelect.addEventListener('change', loadClasses);
+}
+init();
+</script>
+{% endblock %}

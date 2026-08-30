@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}School Settings - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto card">
+    <h2 class="text-2xl font-bold mb-6">School Settings</h2>
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="label">School name</label><input type="text" name="name" value="{{ school.name }}" required class="input"></div>
+            <div><label class="label">Motto</label><input type="text" name="motto" value="{{ school.motto or '' }}" class="input"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="label">Email</label><input type="email" name="email" value="{{ school.email or '' }}" class="input"></div>
+            <div><label class="label">Phone</label><input type="text" name="phone" value="{{ school.phone or '' }}" class="input"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="label">Address</label><input type="text" name="address" value="{{ school.address or '' }}" class="input"></div>
+            <div><label class="label">Location / City</label><input type="text" name="location" value="{{ school.location or '' }}" class="input"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+            <div><label class="label">Primary brand color</label><input type="color" name="primary_color" value="{{ school.primary_color or '#4f46e5' }}" class="input h-10 p-1"></div>
+            <div><label class="label">Logo / picture</label><input type="file" name="logo" accept="image/*" class="input-file"></div>
+        </div>
+        {% if school.logo %}
+        <div class="flex items-center gap-3"><img src="{{ url_for('static', filename=school.logo) }}" alt="School logo" class="h-16 w-16 rounded-full object-cover border"><span class="text-sm text-slate-500">Current logo</span></div>
+        {% endif %}
+        <div><label class="label">New admin code (leave blank to keep current)</label><input type="text" name="admin_code" class="input"></div>
+        <hr class="border-slate-200">
+        <h3 class="font-semibold text-slate-700">Recipient payment accounts</h3>
+        <div><label class="label">Mobile money numbers</label><textarea name="payment_mobile_money" rows="3" class="input" placeholder="e.g. AirtelTigo: 0275638897, Vodafone: 0502335288">{{ school.payment_mobile_money or '' }}</textarea></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="label">Bank name</label><input type="text" name="payment_bank_name" value="{{ school.payment_bank_name or '' }}" class="input"></div>
+            <div><label class="label">Bank account holder</label><input type="text" name="payment_bank_holder" value="{{ school.payment_bank_holder or '' }}" class="input"></div>
+        </div>
+        <div><label class="label">Bank account number</label><input type="text" name="payment_bank_account" value="{{ school.payment_bank_account or '' }}" class="input"></div>
+        <button type="submit" class="btn-primary">Save Settings</button>
+    </form>
+</div>
+{% endblock %}
