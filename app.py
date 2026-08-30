@@ -713,7 +713,7 @@ def payments_view():
             db.session.commit()
             flash('Payment status updated.', 'success')
             return redirect(url_for('payments_view'))
-        return render_template('payments.html', payments=payments)
+        return render_template('payments.html', payments=payments, admin=True)
     if request.method == 'POST':
         amount = float(request.form.get('amount', 0))
         method = request.form.get('method')
