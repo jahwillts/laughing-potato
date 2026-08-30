@@ -1,7 +1,36 @@
 {% extends 'base.html' %}
 {% block title %}Payments - {{ school.name }}{% endblock %}
 {% block content %}
+{% macro payment_accounts() %}
+{% if school.payment_mobile_money or school.payment_bank_name or school.payment_bank_account %}
+<div class="card mb-6">
+    <h2 class="text-xl font-bold mb-4">Recipient payment accounts</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+        {% if school.payment_mobile_money %}
+        <div>
+            <h3 class="font-semibold text-slate-700 mb-1">Mobile Money</h3>
+            <p class="whitespace-pre-line">{{ school.payment_mobile_money }}</p>
+        </div>
+        {% endif %}
+        {% if school.payment_bank_name or school.payment_bank_account %}
+        <div>
+            <h3 class="font-semibold text-slate-700 mb-1">Bank Transfer</h3>
+            <p><span class="text-slate-500">Bank:</span> {{ school.payment_bank_name or '—' }}</p>
+            <p><span class="text-slate-500">Account holder:</span> {{ school.payment_bank_holder or '—' }}</p>
+            <p><span class="text-slate-500">Account number:</span> {{ school.payment_bank_account or '—' }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="card mb-6 text-sm text-slate-600">
+    No recipient payment accounts have been configured yet. The school admin can add them in School Settings.
+</div>
+{% endif %}
+{% endmacro %}
+
 {% if admin %}
+{{ payment_accounts() }}
 <div class="card">
     <h2 class="text-2xl font-bold mb-4">All Payments</h2>
     <table class="w-full text-sm">
@@ -31,6 +60,7 @@
     </table>
 </div>
 {% else %}
+{{ payment_accounts() }}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="card">
         <h2 class="text-2xl font-bold mb-4">Make Payment</h2>

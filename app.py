@@ -4,6 +4,7 @@ from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -38,6 +39,10 @@ class School(db.Model):
     address = db.Column(db.String(250))
     phone = db.Column(db.String(50))
     admin_code_hash = db.Column(db.String(256))
+    payment_mobile_money = db.Column(db.String(255))
+    payment_bank_name = db.Column(db.String(120))
+    payment_bank_account = db.Column(db.String(120))
+    payment_bank_holder = db.Column(db.String(120))
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -445,6 +450,10 @@ def school_settings():
         school.motto = request.form.get('motto', school.motto)
         school.address = request.form.get('address', school.address)
         school.phone = request.form.get('phone', school.phone)
+        school.payment_mobile_money = request.form.get('payment_mobile_money', school.payment_mobile_money)
+        school.payment_bank_name = request.form.get('payment_bank_name', school.payment_bank_name)
+        school.payment_bank_account = request.form.get('payment_bank_account', school.payment_bank_account)
+        school.payment_bank_holder = request.form.get('payment_bank_holder', school.payment_bank_holder)
         if 'logo' in request.files:
             school.logo = save_photo(request.files['logo']) or school.logo
         new_code = request.form.get('admin_code', '').strip()
@@ -705,6 +714,7 @@ def exam_report(exam_id):
 @login_required
 def payments_view():
     sid = current_user.school_id
+    school = get_school()
     if current_user.role == 'admin':
         payments = Payment.query.filter_by(school_id=sid).order_by(Payment.date.desc()).all()
         if request.method == 'POST':
@@ -713,7 +723,7 @@ def payments_view():
             db.session.commit()
             flash('Payment status updated.', 'success')
             return redirect(url_for('payments_view'))
-        return render_template('payments.html', payments=payments, admin=True)
+        return render_template('payments.html', payments=payments, admin=True, school=school)
     if request.method == 'POST':
         amount = float(request.form.get('amount', 0))
         method = request.form.get('method')
@@ -727,7 +737,7 @@ def payments_view():
         flash('Payment submitted. Pending approval.', 'info')
         return redirect(url_for('payments_view'))
     payments = Payment.query.filter_by(user_id=current_user.id, school_id=sid).order_by(Payment.date.desc()).all()
-    return render_template('payments.html', payments=payments)
+    return render_template('payments.html', payments=payments, school=school)
 
 @app.route('/renewals', methods=['GET', 'POST'])
 @role_required('admin')
@@ -796,8 +806,26 @@ def chat_view():
 # Init
 # ---------------------------------------------------------------------------
 
+def migrate_db():
+    """Add any missing columns to existing SQLite tables."""
+    try:
+        cols = {c[1] for c in db.session.execute(text("PRAGMA table_info(school)"))}
+        additions = [
+            ('payment_mobile_money', 'VARCHAR(255)'),
+            ('payment_bank_name', 'VARCHAR(120)'),
+            ('payment_bank_account', 'VARCHAR(120)'),
+            ('payment_bank_holder', 'VARCHAR(120)'),
+        ]
+        for col, dtype in additions:
+            if col not in cols:
+                db.session.execute(text(f"ALTER TABLE school ADD COLUMN {col} {dtype}"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
 with app.app_context():
     db.create_all()
+    migrate_db()
     if not School.query.first():
         default_code = os.environ.get('ADMIN_CODE', 'admin123')
         school = School(
