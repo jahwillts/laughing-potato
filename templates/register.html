@@ -105,12 +105,30 @@ function toggleFields(){
         document.getElementById('parentField').style.display = 'none';
     }
 }
-toggleSchoolAction();
-
-// Populate class dropdown based on selected school (basic: reload could do it, but for now keep empty)
-document.querySelector('select[name="school_id"]').addEventListener('change', function(){
-    // In a full SPA this would fetch classes; the server currently sends no classes list.
-    // For now, users select class after admin creates classes.
-});
+async function loadClasses(){
+    var schoolSelect = document.querySelector('select[name="school_id"]');
+    var classSelect = document.getElementById('classSelect');
+    var sid = schoolSelect ? schoolSelect.value : '';
+    classSelect.innerHTML = '<option value="">-- Select class --</option>';
+    if (!sid) return;
+    try {
+        var url = "{{ url_for('school_classes', school_id=0) }}".replace('0', sid);
+        var res = await fetch(url);
+        var classes = await res.json();
+        classes.forEach(function(c){
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            classSelect.appendChild(opt);
+        });
+    } catch (e) {}
+}
+function init(){
+    toggleSchoolAction();
+    loadClasses();
+    var schoolSelect = document.querySelector('select[name="school_id"]');
+    if (schoolSelect) schoolSelect.addEventListener('change', loadClasses);
+}
+init();
 </script>
 {% endblock %}

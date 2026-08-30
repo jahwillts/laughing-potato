@@ -2,7 +2,7 @@ import os
 from datetime import datetime, date, timedelta
 from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -374,6 +374,11 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
+
+@app.route('/api/schools/<int:school_id>/classes')
+def school_classes(school_id):
+    classes = Class.query.filter_by(school_id=school_id).order_by(Class.name).all()
+    return jsonify([{'id': c.id, 'name': f"{c.name} {c.section or ''}".strip()} for c in classes])
 
 @app.route('/dashboard')
 @login_required
