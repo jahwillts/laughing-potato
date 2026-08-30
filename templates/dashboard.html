@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-900">Hello, {{ current_user.full_name }}</h2>
+    <p class="text-slate-600 capitalize">{{ current_user.role }} dashboard</p>
+</div>
+
+{% if current_user.role == 'admin' %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for label, count in counts.items() %}
+    <div class="card text-center">
+        <div class="text-4xl font-bold text-indigo-600">{{ count }}</div>
+        <div class="text-slate-600 mt-1 capitalize">{{ label }}</div>
+    </div>
+    {% endfor %}
+</div>
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <a href="{{ url_for('school_settings') }}" class="card hover:shadow-lg transition">School Settings</a>
+    <a href="{{ url_for('class_subjects') }}" class="card hover:shadow-lg transition">Assign Subjects</a>
+    <a href="{{ url_for('renewals_view') }}" class="card hover:shadow-lg transition">Subscription</a>
+</div>
+{% endif %}
+
+{% if current_user.role == 'teacher' %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+        <h3 class="text-lg font-semibold mb-4">My Classes</h3>
+        <ul class="space-y-2">
+            {% for c in classes %}
+            <li class="p-3 bg-slate-50 rounded-lg">{{ c.name }} {{ c.section or '' }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="card">
+        <h3 class="text-lg font-semibold mb-4">My Subjects</h3>
+        <ul class="space-y-2">
+            {% for s in subjects %}
+            <li class="p-3 bg-slate-50 rounded-lg">{{ s.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+{% if current_user.role == 'student' %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="card lg:col-span-2">
+        <h3 class="text-lg font-semibold mb-4">My Courses</h3>
+        <ul class="space-y-2">
+            {% for cs in courses %}
+            <li class="p-3 bg-slate-50 rounded-lg flex justify-between">
+                <span>{{ cs.subject.name }}</span>
+                <span class="text-sm text-slate-500">{{ cs.teacher.full_name }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="card">
+        <h3 class="text-lg font-semibold mb-4">Performance</h3>
+        <div class="text-4xl font-bold text-emerald-600">{{ overall }}%</div>
+        <p class="text-slate-600">Overall average</p>
+    </div>
+</div>
+<div class="mt-6 card">
+    <h3 class="text-lg font-semibold mb-4">Timetable</h3>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100"><tr><th>Day</th><th>Subject</th><th>Time</th></tr></thead>
+            <tbody>
+                {% for t in timetable %}
+                <tr class="border-b"><td>{{ t.day }}</td><td>{{ t.subject.name }}</td><td>{{ t.start_time }} - {{ t.end_time }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if current_user.role == 'parent' %}
+{% for item in children_data %}
+<div class="card mb-6">
+    <div class="flex items-center gap-4 mb-4">
+        {% if item.child.photo %}
+        <img src="{{ url_for('static', filename=item.child.photo) }}" class="h-14 w-14 rounded-full object-cover">
+        {% endif %}
+        <div>
+            <h3 class="text-xl font-bold">{{ item.child.full_name }}</h3>
+            <p class="text-sm text-slate-600">Overall: <span class="font-semibold text-emerald-600">{{ item.overall }}%</span></p>
+        </div>
+    </div>
+    <h4 class="font-semibold mb-2">Subject Averages</h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        {% for m in item.marks %}
+        <div class="p-3 bg-slate-50 rounded-lg">
+            <div class="font-medium">{{ m.subject }}</div>
+            <div class="text-indigo-600 font-bold">{{ m.average }}%</div>
+        </div>
+        {% endfor %}
+    </div>
+    <h4 class="font-semibold mb-2">Recent Exams</h4>
+    <ul class="space-y-2">
+        {% for a in item.attempts %}
+        <li class="p-2 bg-slate-50 rounded text-sm">{{ a.exam.title }}: {{ a.score }}/{{ a.total }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

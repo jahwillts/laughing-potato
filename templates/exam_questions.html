@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Exam Questions - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="card mb-6">
+    <h2 class="text-2xl font-bold mb-2">{{ exam.title }}</h2>
+    <p class="text-slate-600 mb-4">{{ exam.subject.name }} &middot; {{ exam.class_.name }}</p>
+    <form method="POST" class="space-y-4">
+        <div><label class="label">Question</label><textarea name="text" required rows="2" class="input"></textarea></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" name="option_a" placeholder="Option A" required class="input">
+            <input type="text" name="option_b" placeholder="Option B" required class="input">
+            <input type="text" name="option_c" placeholder="Option C" required class="input">
+            <input type="text" name="option_d" placeholder="Option D" required class="input">
+        </div>
+        <div>
+            <label class="label">Correct option</label>
+            <select name="correct_option" class="input">
+                <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-primary">Add Question</button>
+    </form>
+</div>
+<div class="card">
+    <h3 class="text-xl font-bold mb-4">Questions ({{ exam.questions|length }})</h3>
+    <ol class="list-decimal list-inside space-y-3">
+        {% for q in exam.questions %}
+        <li class="p-3 bg-slate-50 rounded-lg">
+            <p class="font-medium">{{ q.text }}</p>
+            <div class="grid grid-cols-2 gap-2 text-sm mt-2 text-slate-700">
+                <div>A. {{ q.option_a }}</div><div>B. {{ q.option_b }}</div>
+                <div>C. {{ q.option_c }}</div><div>D. {{ q.option_d }}</div>
+            </div>
+            <div class="text-sm text-emerald-700 mt-2 font-semibold">Correct: {{ q.correct_option }}</div>
+        </li>
+        {% endfor %}
+    </ol>
+</div>
+{% endblock %}

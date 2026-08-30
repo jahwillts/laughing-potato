@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}School Settings - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto card">
+    <h2 class="text-2xl font-bold mb-6">School Settings</h2>
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        <div><label class="label">School name</label><input type="text" name="name" value="{{ school.name }}" required class="input"></div>
+        <div><label class="label">Motto</label><input type="text" name="motto" value="{{ school.motto or '' }}" class="input"></div>
+        <div><label class="label">Address</label><input type="text" name="address" value="{{ school.address or '' }}" class="input"></div>
+        <div><label class="label">Phone</label><input type="text" name="phone" value="{{ school.phone or '' }}" class="input"></div>
+        <div><label class="label">Logo</label><input type="file" name="logo" accept="image/*" class="input-file"></div>
+        <button type="submit" class="btn-primary">Save Settings</button>
+    </form>
+</div>
+{% endblock %}

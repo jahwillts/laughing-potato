@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Profile - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto card">
+    <div class="flex items-center gap-4 mb-6">
+        {% if current_user.photo %}
+        <img src="{{ url_for('static', filename=current_user.photo) }}" class="h-20 w-20 rounded-full object-cover border-2 border-white shadow">
+        {% else %}
+        <div class="h-20 w-20 rounded-full bg-indigo-100 flex items-center justify-center text-2xl font-bold text-indigo-600">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>
+        {% endif %}
+        <div>
+            <h2 class="text-2xl font-bold">{{ current_user.full_name }}</h2>
+            <p class="text-slate-600 capitalize">{{ current_user.role }}</p>
+        </div>
+    </div>
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="label">First name</label><input type="text" name="first_name" value="{{ current_user.first_name }}" required class="input"></div>
+            <div><label class="label">Last name</label><input type="text" name="last_name" value="{{ current_user.last_name }}" required class="input"></div>
+        </div>
+        <div><label class="label">Phone</label><input type="text" name="phone" value="{{ current_user.phone or '' }}" class="input"></div>
+        <div><label class="label">New password</label><input type="password" name="password" class="input"></div>
+        <div><label class="label">Profile photo</label><input type="file" name="photo" accept="image/*" class="input-file"></div>
+        <button type="submit" class="btn-primary">Update Profile</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Timetable - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h2 class="text-2xl font-bold mb-4">Timetable</h2>
+    {% if current_user.role in ('admin','teacher') %}
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6 text-sm">
+        <select name="class_id" required class="input"><option value="">Class</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
+        <select name="subject_id" required class="input"><option value="">Subject</option>{% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
+        <select name="teacher_id" required class="input"><option value="">Teacher</option>{% for t in teachers %}<option value="{{ t.id }}">{{ t.full_name }}</option>{% endfor %}</select>
+        <select name="day" required class="input"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option></select>
+        <input type="time" name="start_time" required class="input">
+        <input type="time" name="end_time" required class="input">
+        <button type="submit" class="btn-primary md:col-span-6">Add Entry</button>
+    </form>
+    {% endif %}
+    <table class="w-full text-sm">
+        <thead class="bg-slate-100"><tr><th>Day</th><th>Class</th><th>Subject</th><th>Teacher</th><th>Time</th></tr></thead>
+        <tbody>
+            {% for e in entries %}
+            <tr class="border-b"><td>{{ e.day }}</td><td>{{ e.class_.name }}</td><td>{{ e.subject.name }}</td><td>{{ e.teacher.full_name }}</td><td>{{ e.start_time }} - {{ e.end_time }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

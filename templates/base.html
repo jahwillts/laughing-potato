@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ school.name }}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>body{font-family:'Inter',sans-serif;}</style>
+</head>
+<body class="bg-gradient min-h-screen text-slate-800">
+    <header class="glass sticky top-0 z-50 border-b border-white/20 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    {% if school.logo %}
+                    <img src="{{ url_for('static', filename=school.logo) }}" alt="logo" class="h-10 w-10 rounded-full object-cover">
+                    {% endif %}
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900 tracking-tight">{{ school.name }}</h1>
+                        <p class="text-xs text-slate-600">{{ school.motto }}</p>
+                    </div>
+                </div>
+                <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="hover:text-indigo-600">Dashboard</a>
+                        {% if current_user.role == 'admin' %}
+                            <a href="{{ url_for('classes_view') }}" class="hover:text-indigo-600">Classes</a>
+                            <a href="{{ url_for('subjects_view') }}" class="hover:text-indigo-600">Subjects</a>
+                            <a href="{{ url_for('users_view') }}" class="hover:text-indigo-600">Users</a>
+                            <a href="{{ url_for('payments_view') }}" class="hover:text-indigo-600">Payments</a>
+                            <a href="{{ url_for('renewals_view') }}" class="hover:text-indigo-600">Renewals</a>
+                        {% endif %}
+                        {% if current_user.role in ('admin','teacher') %}
+                            <a href="{{ url_for('timetable_view') }}" class="hover:text-indigo-600">Timetable</a>
+                            <a href="{{ url_for('marks_view') }}" class="hover:text-indigo-600">Marks</a>
+                            <a href="{{ url_for('exams_view') }}" class="hover:text-indigo-600">Exams</a>
+                        {% endif %}
+                        {% if current_user.role == 'student' %}
+                            <a href="{{ url_for('exams_view') }}" class="hover:text-indigo-600">Exams</a>
+                            <a href="{{ url_for('marks_view') }}" class="hover:text-indigo-600">My Marks</a>
+                        {% endif %}
+                        {% if current_user.role == 'parent' %}
+                            <a href="{{ url_for('marks_view') }}" class="hover:text-indigo-600">Wards</a>
+                            <a href="{{ url_for('exams_view') }}" class="hover:text-indigo-600">Exam Reports</a>
+                        {% endif %}
+                        <a href="{{ url_for('chat_view') }}" class="hover:text-indigo-600">Chat</a>
+                        <a href="{{ url_for('profile') }}" class="hover:text-indigo-600">Profile</a>
+                        <a href="{{ url_for('logout') }}" class="text-red-600 hover:text-red-700">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="hover:text-indigo-600">Login</a>
+                        <a href="{{ url_for('register') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Register</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-3 mb-6">
+                {% for category, message in messages %}
+                    <div class="px-4 py-3 rounded-xl border text-sm
+                        {% if category == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800
+                        {% elif category == 'danger' %}bg-rose-50 border-rose-200 text-rose-800
+                        {% elif category == 'warning' %}bg-amber-50 border-amber-200 text-amber-800
+                        {% else %}bg-sky-50 border-sky-200 text-sky-800{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="text-center text-slate-500 text-sm py-6">
+        &copy; {{ school.name }} - School Management System
+    </footer>
+</body>
+</html>

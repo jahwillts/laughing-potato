@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Exam Result - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="card max-w-2xl mx-auto text-center">
+    <h2 class="text-3xl font-bold mb-4">{{ exam.title }} Result</h2>
+    <div class="text-6xl font-extrabold {% if attempt.score/attempt.total >= 0.5 %}text-emerald-600{% else %}text-rose-600{% endif %} mb-2">
+        {{ attempt.score }} / {{ attempt.total }}
+    </div>
+    <p class="text-slate-600 mb-6">Completed: {{ attempt.completed_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    <a href="{{ url_for('dashboard') }}" class="btn-primary">Back to Dashboard</a>
+</div>
+{% endblock %}

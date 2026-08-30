@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Take Exam - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="card max-w-3xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">{{ exam.title }}</h2>
+        <span class="text-sm text-slate-600">Duration: {{ exam.duration }} mins</span>
+    </div>
+    <form method="POST" class="space-y-6">
+        {% for q in exam.questions %}
+        <div class="p-4 bg-slate-50 rounded-lg">
+            <p class="font-semibold mb-3"><span class="mr-2">{{ loop.index }}.</span>{{ q.text }}</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label class="flex items-center gap-2 p-2 bg-white rounded border cursor-pointer"><input type="radio" name="q_{{ q.id }}" value="A" required> {{ q.option_a }}</label>
+                <label class="flex items-center gap-2 p-2 bg-white rounded border cursor-pointer"><input type="radio" name="q_{{ q.id }}" value="B" required> {{ q.option_b }}</label>
+                <label class="flex items-center gap-2 p-2 bg-white rounded border cursor-pointer"><input type="radio" name="q_{{ q.id }}" value="C" required> {{ q.option_c }}</label>
+                <label class="flex items-center gap-2 p-2 bg-white rounded border cursor-pointer"><input type="radio" name="q_{{ q.id }}" value="D" required> {{ q.option_d }}</label>
+            </div>
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn-primary w-full">Submit Exam</button>
+    </form>
+</div>
+{% endblock %}

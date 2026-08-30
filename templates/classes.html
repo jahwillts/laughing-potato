@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Classes - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h2 class="text-2xl font-bold mb-4">Classes</h2>
+    {% if current_user.role == 'admin' %}
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <input type="text" name="name" placeholder="Class name" required class="input">
+        <input type="text" name="section" placeholder="Section" class="input">
+        <button type="submit" class="btn-primary">Add Class</button>
+    </form>
+    {% endif %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100"><tr><th>Name</th><th>Section</th><th>Students</th></tr></thead>
+            <tbody>
+                {% for c in classes %}
+                <tr class="border-b"><td>{{ c.name }}</td><td>{{ c.section or '' }}</td><td>{{ c.students|length }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

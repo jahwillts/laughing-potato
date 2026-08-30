@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Exams - {{ school.name }}{% endblock %}
+{% block content %}
+{% if current_user.role == 'teacher' and mode is not defined %}
+<div class="card mb-6">
+    <h2 class="text-2xl font-bold mb-4">Create Exam</h2>
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
+        <input type="text" name="title" placeholder="Exam title" required class="input md:col-span-2">
+        <select name="subject_id" required class="input"><option value="">Subject</option>{% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
+        <select name="class_id" required class="input"><option value="">Class</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
+        <input type="number" name="duration" value="30" class="input" placeholder="Minutes">
+        <button type="submit" class="btn-primary md:col-span-5">Create Exam</button>
+    </form>
+</div>
+<div class="card">
+    <h2 class="text-2xl font-bold mb-4">My Exams</h2>
+    <table class="w-full text-sm">
+        <thead class="bg-slate-100"><tr><th>Title</th><th>Subject</th><th>Class</th><th>Published</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for e in exams %}
+            <tr class="border-b">
+                <td>{{ e.title }}</td>
+                <td>{{ e.subject.name }}</td>
+                <td>{{ e.class_.name }}</td>
+                <td>{% if e.is_published %}Yes{% else %}No{% endif %}</td>
+                <td class="space-x-2">
+                    <a href="{{ url_for('exam_questions', exam_id=e.id) }}" class="text-indigo-600 hover:underline">Questions</a>
+                    {% if not e.is_published %}<a href="{{ url_for('publish_exam', exam_id=e.id) }}" class="text-emerald-600 hover:underline">Publish</a>{% endif %}
+                    <a href="{{ url_for('exam_report', exam_id=e.id) }}" class="text-slate-600 hover:underline">Report</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if mode == 'student' %}
+<div class="card">
+    <h2 class="text-2xl font-bold mb-4">Available Exams</h2>
+    <ul class="space-y-3">
+        {% for e in exams %}
+        <li class="p-4 bg-slate-50 rounded-lg flex justify-between items-center">
+            <div>
+                <div class="font-semibold">{{ e.title }}</div>
+                <div class="text-sm text-slate-600">{{ e.subject.name }} &middot; {{ e.duration }} mins &middot; {{ e.questions|length }} questions</div>
+            </div>
+            <a href="{{ url_for('take_exam', exam_id=e.id) }}" class="btn-primary text-sm">Start Exam</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if mode == 'parent' %}
+<div class="card">
+    <h2 class="text-2xl font-bold mb-4">Wards' Exam Reports</h2>
+    <ul class="space-y-2">
+        {% for child in children %}
+        <li class="p-3 bg-slate-50 rounded-lg">
+            <a href="{{ url_for('marks_view', student_id=child.id) }}" class="font-semibold text-indigo-600 hover:underline">{{ child.full_name }}</a>
+            {% for attempt in child.exam_attempts %}<span class="text-sm text-slate-600 block">{{ attempt.exam.title }}: {{ attempt.score }}/{{ attempt.total }}</span>{% endfor %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if mode == 'admin' %}
+<div class="card">
+    <h2 class="text-2xl font-bold mb-4">All Exams</h2>
+    <table class="w-full text-sm">
+        <thead class="bg-slate-100"><tr><th>Title</th><th>Subject</th><th>Class</th><th>Teacher</th><th>Published</th></tr></thead>
+        <tbody>
+            {% for e in exams %}
+            <tr class="border-b"><td>{{ e.title }}</td><td>{{ e.subject.name }}</td><td>{{ e.class_.name }}</td><td>{{ e.teacher.full_name }}</td><td>{% if e.is_published %}Yes{% else %}No{% endif %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
