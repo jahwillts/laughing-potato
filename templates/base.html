@@ -42,7 +42,10 @@
                         {% if current_user.role == 'admin' %}
                             <a href="{{ url_for('classes_view') }}" class="hover:text-white hover:underline">Classes</a>
                             <a href="{{ url_for('subjects_view') }}" class="hover:text-white hover:underline">Subjects</a>
-                            <a href="{{ url_for('users_view') }}" class="hover:text-white hover:underline">Users</a>
+                            <a href="{{ url_for('users_view', role='student') }}" class="hover:text-white hover:underline">Students</a>
+                            <a href="{{ url_for('users_view', role='teacher') }}" class="hover:text-white hover:underline">Teachers</a>
+                            <a href="{{ url_for('users_view', role='parent') }}" class="hover:text-white hover:underline">Parents</a>
+                            <a href="{{ url_for('users_view') }}" class="hover:text-white hover:underline">All Users</a>
                             <a href="{{ url_for('payments_view') }}" class="hover:text-white hover:underline">Payments</a>
                             <a href="{{ url_for('renewals_view') }}" class="hover:text-white hover:underline">Renewals</a>
                         {% endif %}

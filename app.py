@@ -370,16 +370,27 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    schools = School.query.order_by(School.name).all()
+    selected_school = None
     if request.method == 'POST':
+        school_id = request.form.get('school_id', type=int)
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
+        school = School.query.get(school_id) if school_id else None
+        user = User.query.filter_by(email=email, school_id=school.id).first() if school else None
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
             flash(f'Welcome, {user.full_name}!', 'success')
             return redirect(url_for('dashboard'))
-        flash('Invalid email or password.', 'danger')
-    return render_template('login.html')
+        if not school:
+            flash('Please select a registered school.', 'danger')
+        else:
+            flash('Invalid email or password for the selected school.', 'danger')
+        selected_school = school
+    else:
+        selected_id = request.args.get('school_id', type=int)
+        selected_school = School.query.get(selected_id) if selected_id else (schools[0] if schools else None)
+    return render_template('login.html', schools=schools, school=selected_school)
 
 @app.route('/logout')
 @login_required
@@ -538,7 +549,20 @@ def users_view():
     if role:
         q = q.filter_by(role=role)
     users = q.order_by(User.role, User.last_name).all()
-    return render_template('users.html', users=users)
+    title = f"{role.capitalize()}s" if role else "Users"
+    return render_template('users.html', users=users, active_role=role, title=title)
+
+@app.route('/users/<int:user_id>')
+@role_required('admin', 'teacher')
+def user_profile(user_id):
+    sid = current_user.school_id
+    user = User.query.filter_by(id=user_id, school_id=sid).first_or_404()
+    marks, overall = aggregate_student_marks(user.id, sid) if user.role == 'student' else ([], 0)
+    courses = ClassSubject.query.filter_by(class_id=user.class_id, school_id=sid).all() if user.role == 'student' else []
+    timetable = Timetable.query.filter_by(class_id=user.class_id, school_id=sid).order_by(Timetable.day, Timetable.start_time).all() if user.role == 'student' else []
+    attempts = ExamAttempt.query.filter_by(student_id=user.id, school_id=sid).all() if user.role == 'student' else []
+    return render_template('user_profile.html', user=user, marks=marks, overall=overall,
+                           courses=courses, timetable=timetable, attempts=attempts)
 
 @app.route('/timetable', methods=['GET', 'POST'])
 @login_required

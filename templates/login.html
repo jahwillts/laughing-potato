@@ -2,18 +2,39 @@
 {% block title %}Login - {{ school.name }}{% endblock %}
 {% block content %}
 <div class="max-w-md mx-auto card">
-    <h2 class="text-2xl font-bold mb-6 text-center">Login to your account</h2>
+    <div class="text-center mb-6">
+        {% if school.logo %}
+        <img src="{{ url_for('static', filename=school.logo) }}" alt="{{ school.name }} logo" class="h-16 w-16 rounded-full object-cover border-2 border-indigo-100 mx-auto shadow-sm">
+        {% else %}
+        <div class="h-16 w-16 rounded-full mx-auto flex items-center justify-center text-white font-bold text-2xl" style="background-color: {{ school.primary_color | default('#4f46e5') }}">{{ school.name[0] | upper }}</div>
+        {% endif %}
+        <h2 class="text-2xl font-bold mt-3">Login to {{ school.name }}</h2>
+        <p class="text-sm text-slate-500">{{ school.motto | default('') }}</p>
+    </div>
     <form method="POST" class="space-y-4">
         <div>
+            <label class="label">Select your school</label>
+            <select name="school_id" id="schoolSelect" required class="input" onchange="changeSchool(this.value)">
+                {% for s in schools %}
+                <option value="{{ s.id }}" {% if school and school.id == s.id %}selected{% endif %}>{{ s.name }} - {{ s.location or s.address or 'Registered School' }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
             <label class="label">Email</label>
-            <input type="email" name="email" required class="input">
+            <input type="email" name="email" required class="input" autofocus>
         </div>
         <div>
             <label class="label">Password</label>
             <input type="password" name="password" required class="input">
         </div>
-        <button type="submit" class="btn-primary w-full">Login</button>
+        <button type="submit" class="btn-primary w-full" style="background-color: {{ school.primary_color | default('#4f46e5') }}">Login</button>
     </form>
     <p class="text-center mt-4 text-sm text-slate-600">Don't have an account? <a href="{{ url_for('register') }}" class="text-indigo-600 hover:underline">Register</a></p>
 </div>
+<script>
+function changeSchool(schoolId) {
+    window.location.href = '{{ url_for("login") }}?school_id=' + schoolId;
+}
+</script>
 {% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}{{ user.full_name }} - {{ school.name }}{% endblock %}
+{% block content %}
+<div class="mb-6 flex items-center gap-4">
+    {% if user.photo %}
+    <img src="{{ url_for('static', filename=user.photo) }}" alt="{{ user.full_name }}" class="h-20 w-20 rounded-full object-cover border">
+    {% else %}
+    <div class="h-20 w-20 rounded-full bg-slate-200 flex items-center justify-center text-2xl font-bold text-slate-600">{{ user.first_name[0]|upper }}</div>
+    {% endif %}
+    <div>
+        <h2 class="text-3xl font-bold text-slate-900">{{ user.full_name }}</h2>
+        <p class="text-slate-600 capitalize">{{ user.role }}{% if user.class_ %} · {{ user.class_.name }} {{ user.class_.section or '' }}{% endif %}</p>
+        <p class="text-sm text-slate-500">{{ user.email }}{% if user.phone %} · {{ user.phone }}{% endif %}</p>
+    </div>
+</div>
+
+{% if user.role == 'student' %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="card lg:col-span-2">
+        <h3 class="text-lg font-semibold mb-4">Courses</h3>
+        {% if courses %}
+        <ul class="space-y-2">
+            {% for cs in courses %}
+            <li class="p-3 bg-slate-50 rounded-lg flex justify-between">
+                <span>{{ cs.subject.name }}</span>
+                <span class="text-sm text-slate-500">{{ cs.teacher.full_name }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-slate-500 text-sm">No courses assigned yet.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3 class="text-lg font-semibold mb-4">Performance</h3>
+        <div class="text-4xl font-bold text-emerald-600">{{ overall }}%</div>
+        <p class="text-slate-600">Overall average</p>
+    </div>
+</div>
+
+{% if marks %}
+<div class="mt-6 card">
+    <h3 class="text-lg font-semibold mb-4">Subject Averages</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for m in marks %}
+        <div class="p-3 bg-slate-50 rounded-lg">
+            <div class="font-medium">{{ m.subject }}</div>
+            <div class="text-indigo-600 font-bold">{{ m.average }}% <span class="text-xs text-slate-400 font-normal">({{ m.count }} marks)</span></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-6 card">
+    <h3 class="text-lg font-semibold mb-4">Timetable</h3>
+    {% if timetable %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100"><tr><th>Day</th><th>Subject</th><th>Time</th></tr></thead>
+            <tbody>
+                {% for t in timetable %}
+                <tr class="border-b"><td>{{ t.day }}</td><td>{{ t.subject.name }}</td><td>{{ t.start_time }} - {{ t.end_time }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">No timetable entries.</p>
+    {% endif %}
+</div>
+
+{% if attempts %}
+<div class="mt-6 card">
+    <h3 class="text-lg font-semibold mb-4">Exam Attempts</h3>
+    <ul class="space-y-2">
+        {% for a in attempts %}
+        <li class="p-3 bg-slate-50 rounded-lg flex justify-between">
+            <span>{{ a.exam.title }}</span>
+            <span class="font-semibold">{{ a.score }}/{{ a.total }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endif %}
+
+{% if user.role != 'student' %}
+<div class="card">
+    <h3 class="text-lg font-semibold mb-2">Profile</h3>
+    <p class="text-slate-600">This user is a {{ user.role }}. Detailed dashboard views are only generated for students.</p>
+</div>
+{% endif %}
+
+<div class="mt-6">
+    <a href="{{ url_for('users_view', role='student') }}" class="text-indigo-600 hover:underline">Back to users</a>
+</div>
+{% endblock %}
