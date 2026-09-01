@@ -5,6 +5,9 @@
   <h1 class="text-3xl md:text-5xl font-bold mb-4">Long-Distance Bus & Shuttle Booking</h1>
   <p class="text-lg md:text-xl text-blue-100 mb-8">Search routes, pick your seat, and travel with confidence.</p>
   <form action="{{ url_for('search') }}" method="get" class="max-w-4xl mx-auto bg-white text-slate-800 rounded-xl p-6 shadow-lg grid md:grid-cols-4 gap-4 items-end">
+    <div class="md:col-span-4 text-right text-sm text-blue-100">
+      Are you a bus station? <a href="{{ url_for('station_register') }}" class="underline hover:text-white">Register your station</a>
+    </div>
     <div>
       <label class="block text-left text-sm font-semibold mb-1">From</label>
       <select name="origin_id" class="w-full border rounded p-2" required>

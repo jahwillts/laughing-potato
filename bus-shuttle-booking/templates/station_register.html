@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Register Station{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow p-6 mt-8">
+  <h2 class="text-2xl font-bold mb-4">Register Your Bus Station</h2>
+  <p class="text-slate-600 mb-6">Create a station profile and an administrator account to start managing routes, buses, and schedules.</p>
+  <form method="post" class="space-y-6">
+    <div>
+      <h3 class="text-lg font-semibold mb-3 border-b pb-2">Station Details</h3>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-semibold mb-1">Station Name *</label>
+          <input type="text" name="station_name" class="w-full border rounded p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">City *</label>
+          <input type="text" name="city" class="w-full border rounded p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Country</label>
+          <input type="text" name="country" class="w-full border rounded p-2">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-semibold mb-1">Address</label>
+          <input type="text" name="address" class="w-full border rounded p-2">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Station Phone</label>
+          <input type="tel" name="phone" class="w-full border rounded p-2">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Station Email</label>
+          <input type="email" name="station_email" class="w-full border rounded p-2">
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 class="text-lg font-semibold mb-3 border-b pb-2">Station Admin Details</h3>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">First Name *</label>
+          <input type="text" name="admin_first_name" class="w-full border rounded p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Last Name *</label>
+          <input type="text" name="admin_last_name" class="w-full border rounded p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Admin Email *</label>
+          <input type="email" name="admin_email" class="w-full border rounded p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Admin Phone</label>
+          <input type="tel" name="admin_phone" class="w-full border rounded p-2">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-semibold mb-1">Password *</label>
+          <input type="password" name="admin_password" class="w-full border rounded p-2" required>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded">Register Station</button>
+  </form>
+</div>
+{% endblock %}

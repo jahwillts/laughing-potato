@@ -39,7 +39,9 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone = db.Column(db.String(50))
-    role = db.Column(db.String(20), nullable=False)  # passenger, driver, operator, admin
+    role = db.Column(db.String(20), nullable=False)  # passenger, driver, operator, admin, station_admin
+    station_id = db.Column(db.Integer, db.ForeignKey('station.id'), nullable=True)
+    station = db.relationship('Station', backref='users')
     password_hash = db.Column(db.String(256), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     license_number = db.Column(db.String(80))
@@ -51,12 +53,27 @@ class User(UserMixin, db.Model):
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+class Station(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    country = db.Column(db.String(120), default='')
+    address = db.Column(db.Text)
+    phone = db.Column(db.String(50))
+    email = db.Column(db.String(120))
+    is_approved = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class Terminal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     city = db.Column(db.String(120), nullable=False)
     country = db.Column(db.String(120), default='')
     code = db.Column(db.String(20), unique=True)
+    station_id = db.Column(db.Integer, db.ForeignKey('station.id'), nullable=True)
+    station = db.relationship('Station', backref='terminals')
     is_active = db.Column(db.Boolean, default=True)
 
 class Route(db.Model):
@@ -67,6 +84,8 @@ class Route(db.Model):
     distance_km = db.Column(db.Float, default=0)
     duration_min = db.Column(db.Integer, default=0)
     base_price = db.Column(db.Float, nullable=False)
+    station_id = db.Column(db.Integer, db.ForeignKey('station.id'), nullable=True)
+    station = db.relationship('Station', backref='routes')
     is_active = db.Column(db.Boolean, default=True)
     origin = db.relationship('Terminal', foreign_keys=[origin_id], backref='routes_origin')
     destination = db.relationship('Terminal', foreign_keys=[destination_id], backref='routes_destination')
@@ -87,6 +106,8 @@ class Bus(db.Model):
     model = db.Column(db.String(120))
     seat_columns = db.Column(db.Integer, default=4)
     total_seats = db.Column(db.Integer, nullable=False)
+    station_id = db.Column(db.Integer, db.ForeignKey('station.id'), nullable=True)
+    station = db.relationship('Station', backref='buses')
     status = db.Column(db.String(20), default='active')  # active, maintenance, retired
 
 class Schedule(db.Model):
@@ -94,6 +115,8 @@ class Schedule(db.Model):
     route_id = db.Column(db.Integer, db.ForeignKey('route.id'), nullable=False)
     bus_id = db.Column(db.Integer, db.ForeignKey('bus.id'), nullable=False)
     driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    station_id = db.Column(db.Integer, db.ForeignKey('station.id'), nullable=True)
+    station = db.relationship('Station', backref='schedules')
     departure = db.Column(db.DateTime, nullable=False)
     arrival = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default='scheduled')  # scheduled, delayed, cancelled, completed
@@ -151,6 +174,8 @@ class PricingRule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     route_id = db.Column(db.Integer, db.ForeignKey('route.id'), nullable=True)
+    station_id = db.Column(db.Integer, db.ForeignKey('station.id'), nullable=True)
+    station = db.relationship('Station', backref='pricing_rules')
     rule_type = db.Column(db.String(30), nullable=False)  # date_range, weekend, holiday, capacity, peak
     adjustment_type = db.Column(db.String(20), nullable=False)  # percent, flat
     value = db.Column(db.Float, nullable=False)
@@ -210,6 +235,18 @@ def role_required(*roles):
             return f(*args, **kwargs)
         return wrapped
     return decorator
+
+def user_station_id():
+    """Return the station ID for non-global admin users, or None for global admins."""
+    if current_user.is_authenticated and current_user.station_id and current_user.role != 'admin':
+        return current_user.station_id
+    return None
+
+def filter_by_station(query):
+    station_id = user_station_id()
+    if station_id:
+        return query.filter_by(station_id=station_id)
+    return query
 
 def random_code(length=6):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
@@ -386,6 +423,41 @@ def logout():
     flash('Logged out.', 'info')
     return redirect(url_for('index'))
 
+@app.route('/station/register', methods=['GET', 'POST'])
+def station_register():
+    if request.method == 'POST':
+        station_name = request.form.get('station_name', '').strip()
+        city = request.form.get('city', '').strip()
+        country = request.form.get('country', '').strip()
+        address = request.form.get('address', '').strip()
+        phone = request.form.get('phone', '').strip()
+        email = request.form.get('station_email', '').strip().lower()
+        admin_first = request.form.get('admin_first_name', '').strip()
+        admin_last = request.form.get('admin_last_name', '').strip()
+        admin_email = request.form.get('admin_email', '').strip().lower()
+        admin_phone = request.form.get('admin_phone', '').strip()
+        admin_password = request.form.get('admin_password', '')
+        if not all([station_name, city, admin_first, admin_last, admin_email, admin_password]):
+            flash('Please fill all required fields.', 'warning')
+            return redirect(url_for('station_register'))
+        if User.query.filter_by(email=admin_email).first():
+            flash('Admin email already registered.', 'danger')
+            return redirect(url_for('station_register'))
+        if email and Station.query.filter(func.lower(Station.email) == email).first():
+            flash('Station email already registered.', 'danger')
+            return redirect(url_for('station_register'))
+        station = Station(name=station_name, city=city, country=country, address=address, phone=phone, email=email, is_approved=True, is_active=True)
+        db.session.add(station)
+        db.session.flush()
+        admin = User(first_name=admin_first, last_name=admin_last, email=admin_email, phone=admin_phone,
+                     role='station_admin', station_id=station.id,
+                     password_hash=generate_password_hash(admin_password))
+        db.session.add(admin)
+        db.session.commit()
+        flash('Station registered successfully. Log in as the station admin.', 'success')
+        return redirect(url_for('login'))
+    return render_template('station_register.html')
+
 @app.route('/search')
 def search():
     origin_id = request.args.get('origin_id', type=int)
@@ -400,9 +472,11 @@ def search():
         if qdate:
             start = datetime.combine(qdate, datetime.min.time())
             end = start + timedelta(days=1)
-            schedules = Schedule.query.join(Route).filter(
+            schedules = Schedule.query.join(Route).join(Station).filter(
                 Schedule.departure >= start,
                 Schedule.departure < end,
+                Station.is_active == True,
+                Station.is_approved == True,
                 or_(
                     and_(Route.origin_id == origin_id, Route.destination_id == destination_id),
                     and_(
@@ -505,8 +579,11 @@ def create_booking(schedule_id):
 @login_required
 def booking_detail(booking_id):
     booking = Booking.query.get_or_404(booking_id)
-    if booking.user_id != current_user.id and current_user.role not in ('admin', 'operator'):
-        abort(403)
+    if booking.user_id != current_user.id:
+        if current_user.role == 'station_admin' and booking.schedule.station_id != current_user.station_id:
+            abort(403)
+        if current_user.role not in ('admin', 'operator', 'station_admin'):
+            abort(403)
     return render_template('booking_detail.html', booking=booking)
 
 @app.route('/bookings')
@@ -546,6 +623,8 @@ def ticket_pdf(ticket_id):
 def dashboard():
     if current_user.role == 'admin':
         return redirect(url_for('admin_dashboard'))
+    if current_user.role == 'station_admin':
+        return redirect(url_for('station_dashboard'))
     if current_user.role == 'operator':
         return redirect(url_for('operator_dashboard'))
     if current_user.role == 'driver':
@@ -556,36 +635,61 @@ def dashboard():
 # Admin / operator
 # -----------------------------------------------------------------------------
 
+@app.route('/station/dashboard')
+@role_required('station_admin')
+def station_dashboard():
+    station = current_user.station
+    if not station:
+        flash('No station linked to this account.', 'danger')
+        return redirect(url_for('logout'))
+    station_id = station.id
+    total_bookings = Booking.query.join(Schedule).filter(Schedule.station_id == station_id).count()
+    revenue = db.session.query(func.sum(Booking.total_amount)).join(Schedule).filter(Schedule.station_id == station_id).scalar() or 0
+    upcoming = Schedule.query.filter_by(station_id=station_id).filter(Schedule.departure >= datetime.utcnow()).count()
+    buses = Bus.query.filter_by(station_id=station_id).count()
+    routes = Route.query.filter_by(station_id=station_id).count()
+    return render_template('station_dashboard.html', station=station, total_bookings=total_bookings, revenue=revenue, upcoming=upcoming, buses=buses, routes=routes)
+
 @app.route('/admin')
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_dashboard():
-    total_bookings = Booking.query.count()
-    revenue = db.session.query(func.sum(Booking.total_amount)).scalar() or 0
-    upcoming = Schedule.query.filter(Schedule.departure >= datetime.utcnow()).count()
-    buses = Bus.query.count()
-    active_buses = Bus.query.filter_by(status='active').count()
+    station_id = user_station_id()
+    if station_id:
+        total_bookings = Booking.query.join(Schedule).filter(Schedule.station_id == station_id).count()
+        revenue = db.session.query(func.sum(Booking.total_amount)).join(Schedule).filter(Schedule.station_id == station_id).scalar() or 0
+        upcoming = Schedule.query.filter_by(station_id=station_id).filter(Schedule.departure >= datetime.utcnow()).count()
+        buses = Bus.query.filter_by(station_id=station_id).count()
+        active_buses = Bus.query.filter_by(station_id=station_id, status='active').count()
+    else:
+        total_bookings = Booking.query.count()
+        revenue = db.session.query(func.sum(Booking.total_amount)).scalar() or 0
+        upcoming = Schedule.query.filter(Schedule.departure >= datetime.utcnow()).count()
+        buses = Bus.query.count()
+        active_buses = Bus.query.filter_by(status='active').count()
     tickets_open = SupportTicket.query.filter_by(status='open').count()
     return render_template('admin_dashboard.html', total_bookings=total_bookings, revenue=revenue, upcoming=upcoming, buses=buses, active_buses=active_buses, tickets_open=tickets_open)
 
 @app.route('/admin/terminals', methods=['GET', 'POST'])
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_terminals():
+    station_id = user_station_id()
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         city = request.form.get('city', '').strip()
         country = request.form.get('country', '').strip()
         code = request.form.get('code', '').strip().upper() or None
         if name and city:
-            db.session.add(Terminal(name=name, city=city, country=country, code=code))
+            db.session.add(Terminal(name=name, city=city, country=country, code=code, station_id=station_id))
             db.session.commit()
             flash('Terminal added.', 'success')
         return redirect(url_for('admin_terminals'))
-    terminals = Terminal.query.order_by(Terminal.city, Terminal.name).all()
+    terminals = filter_by_station(Terminal.query).order_by(Terminal.city, Terminal.name).all()
     return render_template('admin_terminals.html', terminals=terminals)
 
 @app.route('/admin/routes', methods=['GET', 'POST'])
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_routes():
+    station_id = user_station_id()
     if request.method == 'POST':
         origin_id = request.form.get('origin_id', type=int)
         destination_id = request.form.get('destination_id', type=int)
@@ -594,18 +698,20 @@ def admin_routes():
         duration = request.form.get('duration_min', 0, type=int)
         base = request.form.get('base_price', 0, type=float)
         if origin_id and destination_id and base:
-            db.session.add(Route(origin_id=origin_id, destination_id=destination_id, name=name, distance_km=distance, duration_min=duration, base_price=base))
+            db.session.add(Route(origin_id=origin_id, destination_id=destination_id, name=name, distance_km=distance, duration_min=duration, base_price=base, station_id=station_id))
             db.session.commit()
             flash('Route added.', 'success')
         return redirect(url_for('admin_routes'))
-    routes = Route.query.all()
-    terminals = Terminal.query.order_by(Terminal.city, Terminal.name).all()
+    routes = filter_by_station(Route.query).all()
+    terminals = filter_by_station(Terminal.query).order_by(Terminal.city, Terminal.name).all()
     return render_template('admin_routes.html', routes=routes, terminals=terminals)
 
 @app.route('/admin/route/<int:route_id>/stops', methods=['GET', 'POST'])
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_route_stops(route_id):
     route = Route.query.get_or_404(route_id)
+    if user_station_id() and route.station_id != user_station_id():
+        abort(403)
     if request.method == 'POST':
         terminal_id = request.form.get('terminal_id', type=int)
         order = request.form.get('stop_order', 1, type=int)
@@ -615,33 +721,34 @@ def admin_route_stops(route_id):
             db.session.commit()
         return redirect(url_for('admin_route_stops', route_id=route_id))
     stops = RouteStop.query.filter_by(route_id=route_id).order_by(RouteStop.stop_order).all()
-    terminals = Terminal.query.order_by(Terminal.city, Terminal.name).all()
+    terminals = filter_by_station(Terminal.query).order_by(Terminal.city, Terminal.name).all()
     return render_template('admin_route_stops.html', route=route, stops=stops, terminals=terminals)
 
 @app.route('/admin/buses', methods=['GET', 'POST'])
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_buses():
+    station_id = user_station_id()
     if request.method == 'POST':
         reg = request.form.get('registration', '').strip().upper()
         model = request.form.get('model', '').strip()
         cols = request.form.get('seat_columns', 4, type=int)
         seats = request.form.get('total_seats', cols * 10, type=int)
         if reg and seats:
-            db.session.add(Bus(registration=reg, model=model, seat_columns=cols, total_seats=seats))
+            db.session.add(Bus(registration=reg, model=model, seat_columns=cols, total_seats=seats, station_id=station_id))
             db.session.commit()
             flash('Bus added.', 'success')
         return redirect(url_for('admin_buses'))
-    buses = Bus.query.order_by(Bus.registration).all()
+    buses = filter_by_station(Bus.query).order_by(Bus.registration).all()
     return render_template('admin_buses.html', buses=buses)
 
 @app.route('/admin/fleet')
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_fleet():
-    buses = Bus.query.order_by(Bus.registration).all()
+    buses = filter_by_station(Bus.query).order_by(Bus.registration).all()
     return render_template('admin_fleet.html', buses=buses)
 
 @app.route('/admin/fleet/maintenance', methods=['POST'])
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_fleet_maintenance():
     bus_id = request.form.get('bus_id', type=int)
     mtype = request.form.get('maintenance_type', '').strip()
@@ -649,17 +756,22 @@ def admin_fleet_maintenance():
     notes = request.form.get('notes', '')
     if bus_id and mtype and mdate:
         try:
-            d = datetime.strptime(mdate, '%Y-%m-%d').date()
-            db.session.add(FleetMaintenance(bus_id=bus_id, maintenance_type=mtype, scheduled_date=d, notes=notes))
-            db.session.commit()
-            flash('Maintenance scheduled.', 'success')
+            bus = filter_by_station(Bus.query).filter_by(id=bus_id).first()
+            if bus:
+                d = datetime.strptime(mdate, '%Y-%m-%d').date()
+                db.session.add(FleetMaintenance(bus_id=bus.id, maintenance_type=mtype, scheduled_date=d, notes=notes))
+                db.session.commit()
+                flash('Maintenance scheduled.', 'success')
+            else:
+                flash('Bus not found.', 'warning')
         except ValueError:
             flash('Invalid date.', 'warning')
     return redirect(url_for('admin_fleet'))
 
 @app.route('/admin/schedules', methods=['GET', 'POST'])
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_schedules():
+    station_id = user_station_id()
     if request.method == 'POST':
         route_id = request.form.get('route_id', type=int)
         bus_id = request.form.get('bus_id', type=int)
@@ -670,7 +782,12 @@ def admin_schedules():
         occurrences = request.form.get('occurrences', 1, type=int)
         if route_id and bus_id and dep_date and dep_time:
             try:
-                route = Route.query.get(route_id)
+                route = filter_by_station(Route.query).filter_by(id=route_id).first()
+                bus = filter_by_station(Bus.query).filter_by(id=bus_id).first()
+                driver = User.query.filter_by(id=driver_id, role='driver').first() if driver_id else None
+                if not route or not bus:
+                    flash('Invalid route or bus for this station.', 'danger')
+                    return redirect(url_for('admin_schedules'))
                 base_dep = datetime.strptime(f"{dep_date} {dep_time}", '%Y-%m-%d %H:%M')
                 for i in range(occurrences):
                     dep = base_dep + timedelta(days=i)
@@ -681,7 +798,7 @@ def admin_schedules():
                     if recurrence == 'weekly':
                         dep = base_dep + timedelta(weeks=i)
                     arr = dep + timedelta(minutes=route.duration_min or 0)
-                    sched = Schedule(route_id=route_id, bus_id=bus_id, driver_id=driver_id, departure=dep, arrival=arr)
+                    sched = Schedule(route_id=route.id, bus_id=bus.id, driver_id=driver.id if driver else None, station_id=station_id, departure=dep, arrival=arr)
                     db.session.add(sched)
                     db.session.flush()
                     generate_seats(sched)
@@ -690,18 +807,27 @@ def admin_schedules():
             except ValueError as e:
                 flash(f'Error: {e}', 'danger')
         return redirect(url_for('admin_schedules'))
-    schedules = Schedule.query.order_by(Schedule.departure.desc()).all()
-    routes = Route.query.all()
-    buses = Bus.query.filter_by(status='active').all()
-    drivers = User.query.filter_by(role='driver').all()
+    schedules = filter_by_station(Schedule.query).order_by(Schedule.departure.desc()).all()
+    routes = filter_by_station(Route.query).all()
+    buses = filter_by_station(Bus.query).filter_by(status='active').all()
+    if station_id:
+        drivers = User.query.filter_by(role='driver', station_id=station_id).all()
+    else:
+        drivers = User.query.filter_by(role='driver').all()
     return render_template('admin_schedules.html', schedules=schedules, routes=routes, buses=buses, drivers=drivers)
 
 @app.route('/admin/pricing', methods=['GET', 'POST'])
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_pricing():
+    station_id = user_station_id()
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         route_id = request.form.get('route_id', type=int) or None
+        if route_id:
+            route = filter_by_station(Route.query).filter_by(id=route_id).first()
+            if not route:
+                flash('Invalid route.', 'danger')
+                return redirect(url_for('admin_pricing'))
         rule_type = request.form.get('rule_type')
         adj_type = request.form.get('adjustment_type')
         value = request.form.get('value', 0, type=float)
@@ -714,33 +840,44 @@ def admin_pricing():
             try:
                 af = datetime.strptime(active_from, '%Y-%m-%d').date()
                 at = datetime.strptime(active_to, '%Y-%m-%d').date()
-                db.session.add(PricingRule(name=name, route_id=route_id, rule_type=rule_type, adjustment_type=adj_type, value=value, threshold=threshold, start_hour=start_hour, end_hour=end_hour, active_from=af, active_to=at))
+                db.session.add(PricingRule(name=name, route_id=route_id, station_id=station_id, rule_type=rule_type, adjustment_type=adj_type, value=value, threshold=threshold, start_hour=start_hour, end_hour=end_hour, active_from=af, active_to=at))
                 db.session.commit()
                 flash('Pricing rule added.', 'success')
             except ValueError:
                 flash('Invalid date.', 'warning')
         return redirect(url_for('admin_pricing'))
-    rules = PricingRule.query.order_by(PricingRule.active_from.desc()).all()
-    routes = Route.query.all()
+    rules = filter_by_station(PricingRule.query).order_by(PricingRule.active_from.desc()).all()
+    routes = filter_by_station(Route.query).all()
     return render_template('admin_pricing.html', rules=rules, routes=routes)
 
 @app.route('/admin/analytics')
-@role_required('admin', 'operator')
+@role_required('admin', 'operator', 'station_admin')
 def admin_analytics():
-    total_trips = Booking.query.filter(Booking.status == 'confirmed').count()
-    total_revenue = db.session.query(func.sum(Booking.total_amount)).filter(Booking.status == 'confirmed').scalar() or 0
-    peak_hours = db.session.query(func.strftime('%H', Booking.booked_at).label('hour'), func.count(Booking.id)).group_by('hour').order_by('hour').all()
-    daily_revenue = db.session.query(func.strftime('%Y-%m-%d', Booking.booked_at).label('day'), func.sum(Booking.total_amount)).filter(Booking.status == 'confirmed').group_by('day').order_by('day').all()
+    station_id = user_station_id()
+    base_query = Booking.query.join(Schedule)
+    if station_id:
+        base_query = base_query.filter(Schedule.station_id == station_id)
+    total_trips = base_query.filter(Booking.status == 'confirmed').count()
+    revenue_query = db.session.query(func.sum(Booking.total_amount)).select_from(Booking).join(Schedule).filter(Booking.status == 'confirmed')
+    peak_query = db.session.query(func.strftime('%H', Booking.booked_at).label('hour'), func.count(Booking.id)).select_from(Booking).join(Schedule).filter(Booking.status == 'confirmed')
+    daily_query = db.session.query(func.strftime('%Y-%m-%d', Booking.booked_at).label('day'), func.sum(Booking.total_amount)).select_from(Booking).join(Schedule).filter(Booking.status == 'confirmed')
+    if station_id:
+        revenue_query = revenue_query.filter(Schedule.station_id == station_id)
+        peak_query = peak_query.filter(Schedule.station_id == station_id)
+        daily_query = daily_query.filter(Schedule.station_id == station_id)
+    total_revenue = revenue_query.scalar() or 0
+    peak_hours = peak_query.group_by('hour').order_by('hour').all()
+    daily_revenue = daily_query.group_by('day').order_by('day').all()
     return render_template('admin_analytics.html', total_trips=total_trips, total_revenue=total_revenue, peak_hours=peak_hours, daily_revenue=daily_revenue)
 
 @app.route('/admin/support')
-@role_required('admin', 'operator')
+@role_required('admin')
 def admin_support():
     tickets = SupportTicket.query.order_by(SupportTicket.created_at.desc()).all()
     return render_template('admin_support.html', tickets=tickets)
 
 @app.route('/admin/support/<int:ticket_id>/resolve', methods=['POST'])
-@role_required('admin', 'operator')
+@role_required('admin')
 def admin_support_resolve(ticket_id):
     t = SupportTicket.query.get_or_404(ticket_id)
     t.status = 'resolved'
@@ -835,25 +972,29 @@ def api_scan():
 def seed_demo_data():
     if User.query.first():
         return
-    admin = User(first_name='Admin', last_name='User', email='admin@bus.com', phone='', role='admin', password_hash=generate_password_hash('admin123'))
-    driver = User(first_name='John', last_name='Doe', email='driver@bus.com', phone='1234567890', role='driver', password_hash=generate_password_hash('driver123'), license_number='DL123456', vehicle_info='Bus A', background_status='approved')
+    station = Station(name='Central Bus Services', city='Kigali', country='Rwanda', address='Kigali City Center', phone='', email='info@centralbus.example', is_approved=True, is_active=True)
+    db.session.add(station)
+    db.session.flush()
+
+    admin = User(first_name='Admin', last_name='User', email='admin@bus.com', phone='', role='admin', station_id=station.id, password_hash=generate_password_hash('admin123'))
+    driver = User(first_name='John', last_name='Doe', email='driver@bus.com', phone='1234567890', role='driver', station_id=station.id, password_hash=generate_password_hash('driver123'), license_number='DL123456', vehicle_info='Bus A', background_status='approved')
     passenger = User(first_name='Jane', last_name='Doe', email='passenger@bus.com', phone='0987654321', role='passenger', password_hash=generate_password_hash('pass123'))
     db.session.add_all([admin, driver, passenger])
     db.session.commit()
 
-    t1 = Terminal(name='Central Station', city='Kigali', code='KGL')
-    t2 = Terminal(name='Northern Terminal', city='Musanze', code='MSZ')
-    t3 = Terminal(name='Eastern Stop', city='Rwamagana', code='RWM')
+    t1 = Terminal(name='Central Station', city='Kigali', code='KGL', station_id=station.id)
+    t2 = Terminal(name='Northern Terminal', city='Musanze', code='MSZ', station_id=station.id)
+    t3 = Terminal(name='Eastern Stop', city='Rwamagana', code='RWM', station_id=station.id)
     db.session.add_all([t1, t2, t3])
     db.session.commit()
 
-    route = Route(origin_id=t1.id, destination_id=t2.id, name='Kigali - Musanze Express', distance_km=90, duration_min=120, base_price=15.0)
+    route = Route(origin_id=t1.id, destination_id=t2.id, name='Kigali - Musanze Express', distance_km=90, duration_min=120, base_price=15.0, station_id=station.id)
     db.session.add(route)
     db.session.commit()
     db.session.add(RouteStop(route_id=route.id, terminal_id=t3.id, stop_order=1, scheduled_offset_min=45, distance_from_origin=40))
     db.session.commit()
 
-    bus = Bus(registration='RAE123A', model='Yutong 45', seat_columns=4, total_seats=40, status='active')
+    bus = Bus(registration='RAE123A', model='Yutong 45', seat_columns=4, total_seats=40, status='active', station_id=station.id)
     db.session.add(bus)
     db.session.commit()
 
@@ -861,14 +1002,14 @@ def seed_demo_data():
         dep = datetime.now() + timedelta(days=day)
         dep = dep.replace(hour=8, minute=0, second=0, microsecond=0)
         arr = dep + timedelta(minutes=route.duration_min)
-        sched = Schedule(route_id=route.id, bus_id=bus.id, driver_id=driver.id, departure=dep, arrival=arr)
+        sched = Schedule(route_id=route.id, bus_id=bus.id, driver_id=driver.id, station_id=station.id, departure=dep, arrival=arr)
         db.session.add(sched)
         db.session.flush()
         generate_seats(sched)
     db.session.commit()
 
     # seed a pricing rule
-    db.session.add(PricingRule(name='Weekend Surcharge', route_id=route.id, rule_type='weekend', adjustment_type='percent', value=10, active_from=date.today(), active_to=date.today()+timedelta(days=365)))
+    db.session.add(PricingRule(name='Weekend Surcharge', route_id=route.id, station_id=station.id, rule_type='weekend', adjustment_type='percent', value=10, active_from=date.today(), active_to=date.today()+timedelta(days=365)))
     db.session.commit()
 
 # -----------------------------------------------------------------------------
