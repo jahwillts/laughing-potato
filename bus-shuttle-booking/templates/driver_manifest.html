@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Manifest{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-2">Passenger Manifest</h2>
+<p class="text-slate-500 mb-6">{{ schedule.route.origin.name }} &rarr; {{ schedule.route.destination.name }} &bull; {{ schedule.departure.strftime('%Y-%m-%d %H:%M') }}</p>
+
+<div class="bg-white rounded-xl shadow overflow-hidden">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-slate-100"><tr><th class="p-3">Seat</th><th class="p-3">Passenger</th><th class="p-3">Ticket</th><th class="p-3">Luggage</th><th class="p-3">Status</th></tr></thead>
+    <tbody>
+      {% for p in passengers %}
+      <tr class="border-t">
+        <td class="p-3">{{ p.seat.seat_number }}</td>
+        <td class="p-3">{{ p.first_name }} {{ p.last_name }}</td>
+        <td class="p-3">{{ p.ticket.ticket_number }}</td>
+        <td class="p-3">{{ p.luggage_kg }} kg</td>
+        <td class="p-3">{% if p.checked_in %}Checked in at {{ p.checked_in_at.strftime('%H:%M') }}{% else %}<span class="text-amber-600">Pending</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="mt-6">
+  <a href="https://www.google.com/maps/dir/?api=1&origin={{ schedule.route.origin.name | urlencode }}&destination={{ schedule.route.destination.name | urlencode }}" target="_blank" class="text-blue-600 hover:underline">Open turn-by-turn navigation</a>
+</div>
+{% endblock %}

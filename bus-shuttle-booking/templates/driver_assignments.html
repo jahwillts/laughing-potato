@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}My Trips{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">My Upcoming Trips</h2>
+<div class="space-y-4">
+  {% for s in assignments %}
+    <div class="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <div class="font-bold">{{ s.route.name or s.route.origin.name ~ ' - ' ~ s.route.destination.name }}</div>
+        <div class="text-sm text-slate-500">Departs {{ s.departure.strftime('%Y-%m-%d %H:%M') }} &bull; Bus {{ s.bus.registration }}</div>
+      </div>
+      <div class="flex gap-2">
+        <a href="{{ url_for('driver_assignment', schedule_id=s.id) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Manifest</a>
+        <a href="{{ url_for('driver_scan', schedule_id=s.id) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">Scan</a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

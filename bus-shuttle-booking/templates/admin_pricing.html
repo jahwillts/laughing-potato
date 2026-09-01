@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Pricing Rules{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Dynamic Pricing</h2>
+<div class="bg-white rounded-xl shadow p-4 mb-6">
+  <form method="post" class="grid md:grid-cols-8 gap-4 items-end">
+    <input type="text" name="name" placeholder="Rule name" class="border rounded p-2 md:col-span-2" required>
+    <select name="route_id" class="border rounded p-2">
+      <option value="">All routes</option>
+      {% for r in routes %}<option value="{{ r.id }}">{{ r.name or r.origin.name }}</option>{% endfor %}
+    </select>
+    <select name="rule_type" class="border rounded p-2" required>
+      <option value="date_range">Date range</option>
+      <option value="weekend">Weekend</option>
+      <option value="holiday">Holiday</option>
+      <option value="capacity">Capacity</option>
+      <option value="peak">Peak hours</option>
+    </select>
+    <select name="adjustment_type" class="border rounded p-2" required>
+      <option value="percent">Percent</option>
+      <option value="flat">Flat</option>
+    </select>
+    <input type="number" step="0.01" name="value" placeholder="Value" class="border rounded p-2" required>
+    <input type="number" step="0.01" name="threshold" placeholder="Threshold" class="border rounded p-2">
+    <input type="date" name="active_from" class="border rounded p-2" required>
+    <input type="date" name="active_to" class="border rounded p-2" required>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded md:col-span-8 w-full md:w-auto">Add Rule</button>
+  </form>
+</div>
+<table class="w-full bg-white rounded-xl shadow text-left text-sm">
+  <thead class="bg-slate-100"><tr><th class="p-3">Name</th><th class="p-3">Route</th><th class="p-3">Type</th><th class="p-3">Adjustment</th><th class="p-3">Value</th><th class="p-3">Active</th></tr></thead>
+  <tbody>
+    {% for rule in rules %}
+    <tr class="border-t">
+      <td class="p-3">{{ rule.name }}</td>
+      <td class="p-3">{{ rule.route.name or 'All' }}</td>
+      <td class="p-3">{{ rule.rule_type }}</td>
+      <td class="p-3">{{ rule.adjustment_type }}</td>
+      <td class="p-3">{{ rule.value }}</td>
+      <td class="p-3">{{ rule.active_from }} to {{ rule.active_to }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

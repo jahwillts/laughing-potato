@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Analytics Dashboard</h2>
+<div class="grid md:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white rounded-xl shadow p-6">
+    <div class="text-slate-500 text-sm">Total Trips</div>
+    <div class="text-3xl font-bold">{{ total_trips }}</div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-6">
+    <div class="text-slate-500 text-sm">Total Revenue</div>
+    <div class="text-3xl font-bold">${{ "%.2f"|format(total_revenue) }}</div>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow p-6 mb-6">
+  <h3 class="font-bold mb-3">Peak Booking Hours</h3>
+  <table class="w-full text-sm text-left">
+    <thead class="bg-slate-100"><tr><th class="p-2">Hour</th><th class="p-2">Bookings</th></tr></thead>
+    <tbody>
+      {% for h, count in peak_hours %}
+      <tr class="border-t"><td class="p-2">{{ h }}:00</td><td class="p-2">{{ count }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="bg-white rounded-xl shadow p-6">
+  <h3 class="font-bold mb-3">Daily Revenue</h3>
+  <table class="w-full text-sm text-left">
+    <thead class="bg-slate-100"><tr><th class="p-2">Day</th><th class="p-2">Revenue</th></tr></thead>
+    <tbody>
+      {% for day, rev in daily_revenue %}
+      <tr class="border-t"><td class="p-2">{{ day }}</td><td class="p-2">${{ "%.2f"|format(rev or 0) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

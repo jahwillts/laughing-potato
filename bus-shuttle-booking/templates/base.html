@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Bus Shuttle{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    .seat-grid { display: grid; gap: .5rem; justify-content: center; }
+    .seat { width: 3rem; height: 3rem; border-radius: .375rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: .75rem; }
+    .seat.available { background-color: #e0f2fe; border: 2px solid #0ea5e9; color: #0369a1; }
+    .seat.booked { background-color: #e5e7eb; border: 2px solid #9ca3af; color: #6b7280; cursor: not-allowed; }
+    .seat.selected { background-color: #dcfce7; border-color: #22c55e; }
+    .seat.premium { border-top: 4px solid #f59e0b; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <nav class="bg-slate-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <a href="{{ url_for('index') }}" class="font-bold text-lg">BusShuttle</a>
+      <div class="space-x-3 text-sm">
+        <a href="{{ url_for('index') }}" class="hover:underline">Search</a>
+        {% if current_user.is_authenticated %}
+          {% if current_user.role == 'passenger' %}
+            <a href="{{ url_for('bookings_history') }}" class="hover:underline">My Bookings</a>
+          {% endif %}
+          {% if current_user.role in ('admin', 'operator') %}
+            <a href="{{ url_for('admin_dashboard') }}" class="hover:underline">Admin</a>
+          {% endif %}
+          {% if current_user.role == 'driver' %}
+            <a href="{{ url_for('driver_assignments') }}" class="hover:underline">My Trips</a>
+            <a href="{{ url_for('driver_earnings') }}" class="hover:underline">Earnings</a>
+          {% endif %}
+          <span class="text-slate-300">{{ current_user.full_name }}</span>
+          <a href="{{ url_for('logout') }}" class="text-red-300 hover:underline">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="hover:underline">Login</a>
+          <a href="{{ url_for('register') }}" class="hover:underline">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-4 space-y-2">
+          {% for category, message in messages %}
+            <div class="px-4 py-2 rounded text-white {% if category == 'danger' %}bg-red-500{% elif category == 'warning' %}bg-yellow-500{% elif category == 'success' %}bg-green-500{% else %}bg-blue-500{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

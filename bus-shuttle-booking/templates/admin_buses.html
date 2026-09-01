@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Buses{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Buses</h2>
+<div class="bg-white rounded-xl shadow p-4 mb-6">
+  <form method="post" class="grid md:grid-cols-5 gap-4 items-end">
+    <input type="text" name="registration" placeholder="Registration" class="border rounded p-2 uppercase" required>
+    <input type="text" name="model" placeholder="Model" class="border rounded p-2">
+    <input type="number" name="seat_columns" value="4" min="1" class="border rounded p-2">
+    <input type="number" name="total_seats" placeholder="Total seats" class="border rounded p-2" required>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded">Add Bus</button>
+  </form>
+</div>
+<table class="w-full bg-white rounded-xl shadow text-left text-sm">
+  <thead class="bg-slate-100"><tr><th class="p-3">Registration</th><th class="p-3">Model</th><th class="p-3">Columns</th><th class="p-3">Seats</th><th class="p-3">Status</th></tr></thead>
+  <tbody>
+    {% for b in buses %}
+    <tr class="border-t"><td class="p-3">{{ b.registration }}</td><td class="p-3">{{ b.model or '-' }}</td><td class="p-3">{{ b.seat_columns }}</td><td class="p-3">{{ b.total_seats }}</td><td class="p-3 capitalize">{{ b.status }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

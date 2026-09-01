@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Select Seats{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-2">{{ schedule.route.origin.name }} &rarr; {{ schedule.route.destination.name }}</h2>
+<p class="text-slate-500 mb-6">Departure {{ schedule.departure.strftime('%Y-%m-%d %H:%M') }} &bull; Bus {{ schedule.bus.registration }}</p>
+
+<form action="{{ url_for('book', schedule_id=schedule.id) }}" method="post">
+  <div class="bg-white rounded-xl shadow p-6 mb-6">
+    <h3 class="font-bold mb-4">Select your seats</h3>
+    <div class="overflow-x-auto">
+      <div class="seat-grid" style="grid-template-columns: repeat({{ schedule.bus.seat_columns }}, min-content);">
+        {% for row_num, row in rows | dictsort %}
+          {% for seat in row %}
+            <label class="seat {{ 'premium' if seat.seat_type=='premium' else '' }} {{ 'booked' if seat.status=='booked' else 'available' }} {{ 'selected' if request.args.get('seat_ids') and seat.id|string in request.args.get('seat_ids').split(',') else '' }}" title="{{ seat.seat_number }} - {{ seat.seat_type }}">
+              {% if seat.status == 'available' %}
+                <input type="checkbox" name="seat_ids" value="{{ seat.id }}" class="seat-check hidden" {% if request.args.get('seat_ids') and seat.id|string in request.args.get('seat_ids').split(',') %}checked{% endif %}>
+              {% endif %}
+              <span>{{ seat.seat_number }}</span>
+              <span class="text-[10px] uppercase">{{ seat.seat_type[:1] }}</span>
+            </label>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="flex gap-4 justify-center mt-4 text-sm text-slate-600">
+      <div class="flex items-center gap-2"><span class="w-4 h-4 bg-sky-100 border-2 border-sky-500 rounded"></span> Available</div>
+      <div class="flex items-center gap-2"><span class="w-4 h-4 bg-green-100 border-2 border-green-500 rounded"></span> Selected</div>
+      <div class="flex items-center gap-2"><span class="w-4 h-4 bg-gray-200 border-2 border-gray-400 rounded"></span> Booked</div>
+      <div class="flex items-center gap-2"><span class="w-4 h-4 border-t-4 border-amber-500 rounded"></span> Premium</div>
+    </div>
+  </div>
+
+  <div class="flex justify-end">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded">Continue</button>
+  </div>
+</form>
+
+<script>
+  function syncSeat(seat) {
+    const cb = seat.querySelector('.seat-check');
+    if (cb) seat.classList.toggle('selected', cb.checked);
+  }
+  document.querySelectorAll('.seat-check').forEach(cb => {
+    cb.addEventListener('change', function() { syncSeat(this.closest('.seat')); });
+    syncSeat(cb.closest('.seat'));
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Earnings{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Earnings Tracker</h2>
+<div class="grid md:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-slate-500 text-sm">Today</div>
+    <div class="text-2xl font-bold">${{ "%.2f"|format(daily) }}</div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-slate-500 text-sm">This Week</div>
+    <div class="text-2xl font-bold">${{ "%.2f"|format(weekly) }}</div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-slate-500 text-sm">This Month</div>
+    <div class="text-2xl font-bold">${{ "%.2f"|format(monthly) }}</div>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow overflow-hidden">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-slate-100"><tr><th class="p-3">Period</th><th class="p-3">Route</th><th class="p-3">Amount</th></tr></thead>
+    <tbody>
+      {% for e in earnings %}
+      <tr class="border-t">
+        <td class="p-3">{{ e.period_start }} to {{ e.period_end }}</td>
+        <td class="p-3">{{ e.schedule.route.name or e.schedule.route.origin.name if e.schedule else '-' }}</td>
+        <td class="p-3">${{ "%.2f"|format(e.amount) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

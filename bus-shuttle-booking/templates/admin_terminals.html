@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Terminals{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Terminals & Stops</h2>
+<div class="bg-white rounded-xl shadow p-4 mb-6">
+  <form method="post" class="grid md:grid-cols-4 gap-4 items-end">
+    <input type="text" name="name" placeholder="Terminal name" class="border rounded p-2" required>
+    <input type="text" name="city" placeholder="City" class="border rounded p-2" required>
+    <input type="text" name="country" placeholder="Country" class="border rounded p-2">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded">Add Terminal</button>
+  </form>
+</div>
+<table class="w-full bg-white rounded-xl shadow text-left text-sm">
+  <thead class="bg-slate-100">
+    <tr><th class="p-3">Name</th><th class="p-3">City</th><th class="p-3">Country</th><th class="p-3">Code</th></tr>
+  </thead>
+  <tbody>
+    {% for t in terminals %}
+    <tr class="border-t"><td class="p-3">{{ t.name }}</td><td class="p-3">{{ t.city }}</td><td class="p-3">{{ t.country or '-' }}</td><td class="p-3">{{ t.code or '-' }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
