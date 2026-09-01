@@ -549,7 +549,8 @@ def users_view():
     if role:
         q = q.filter_by(role=role)
     users = q.order_by(User.role, User.last_name).all()
-    return render_template('users.html', users=users, active_role=role)
+    title = f"{role.capitalize()}s" if role else "Users"
+    return render_template('users.html', users=users, active_role=role, title=title)
 
 @app.route('/users/<int:user_id>')
 @role_required('admin', 'teacher')

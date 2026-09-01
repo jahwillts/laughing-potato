@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card">
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-        <h2 class="text-2xl font-bold">Users</h2>
+        <h2 class="text-2xl font-bold">{{ title }}</h2>
         <div class="flex flex-wrap gap-2 text-sm">
             <a href="{{ url_for('users_view') }}" class="px-3 py-1 rounded-full {{ 'bg-indigo-600 text-white' if not active_role else 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">All</a>
             <a href="{{ url_for('users_view', role='student') }}" class="px-3 py-1 rounded-full {{ 'bg-indigo-600 text-white' if active_role == 'student' else 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Students</a>

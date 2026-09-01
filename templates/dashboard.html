@@ -15,19 +15,27 @@
     </div>
     {% endfor %}
 </div>
+<div class="mt-10">
+    <h3 class="text-xl font-bold mb-4">User Panels</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="{{ url_for('users_view', role='student') }}" class="card hover:shadow-lg transition text-center">
+            <div class="text-3xl font-bold text-indigo-600">{{ counts.get('students', 0) }}</div>
+            <div class="text-lg font-semibold mt-1">Student Panel</div>
+            <div class="text-xs text-slate-500">Manage students</div>
+        </a>
+        <a href="{{ url_for('users_view', role='teacher') }}" class="card hover:shadow-lg transition text-center">
+            <div class="text-3xl font-bold text-indigo-600">{{ counts.get('teachers', 0) }}</div>
+            <div class="text-lg font-semibold mt-1">Teacher Panel</div>
+            <div class="text-xs text-slate-500">Manage teachers</div>
+        </a>
+        <a href="{{ url_for('users_view', role='parent') }}" class="card hover:shadow-lg transition text-center">
+            <div class="text-3xl font-bold text-indigo-600">{{ counts.get('parents', 0) }}</div>
+            <div class="text-lg font-semibold mt-1">Parent Panel</div>
+            <div class="text-xs text-slate-500">Manage parents</div>
+        </a>
+    </div>
+</div>
 <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-    <a href="{{ url_for('users_view', role='student') }}" class="card hover:shadow-lg transition">
-        <div class="text-3xl font-bold text-indigo-600">{{ counts.get('students', 0) }}</div>
-        <div class="text-slate-600 mt-1">Students</div>
-    </a>
-    <a href="{{ url_for('users_view', role='teacher') }}" class="card hover:shadow-lg transition">
-        <div class="text-3xl font-bold text-indigo-600">{{ counts.get('teachers', 0) }}</div>
-        <div class="text-slate-600 mt-1">Teachers</div>
-    </a>
-    <a href="{{ url_for('users_view', role='parent') }}" class="card hover:shadow-lg transition">
-        <div class="text-3xl font-bold text-indigo-600">{{ counts.get('parents', 0) }}</div>
-        <div class="text-slate-600 mt-1">Parents</div>
-    </a>
     <a href="{{ url_for('school_settings') }}" class="card hover:shadow-lg transition">School Settings</a>
     <a href="{{ url_for('class_subjects') }}" class="card hover:shadow-lg transition">Assign Subjects</a>
     <a href="{{ url_for('renewals_view') }}" class="card hover:shadow-lg transition">Subscription</a>
