@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ station.name }} Dashboard{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-2">{{ station.name }}</h2>
+<p class="text-slate-600 mb-6">{{ station.city }}{% if station.country %}, {{ station.country }}{% endif %}{% if station.address %} &middot; {{ station.address }}{% endif %}</p>
+
+<div class="grid md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-slate-500 text-sm">Total Bookings</div>
+    <div class="text-2xl font-bold">{{ total_bookings }}</div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-slate-500 text-sm">Revenue</div>
+    <div class="text-2xl font-bold">${{ "%.2f"|format(revenue) }}</div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-slate-500 text-sm">Upcoming Trips</div>
+    <div class="text-2xl font-bold">{{ upcoming }}</div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-slate-500 text-sm">Buses / Routes</div>
+    <div class="text-2xl font-bold">{{ buses }} / {{ routes }}</div>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <a href="{{ url_for('admin_terminals') }}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg">Terminals & Stops</a>
+  <a href="{{ url_for('admin_routes') }}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg">Routes</a>
+  <a href="{{ url_for('admin_buses') }}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg">Buses</a>
+  <a href="{{ url_for('admin_fleet') }}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg">Fleet Maintenance</a>
+  <a href="{{ url_for('admin_schedules') }}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg">Schedules</a>
+  <a href="{{ url_for('admin_pricing') }}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg">Pricing Rules</a>
+  <a href="{{ url_for('admin_analytics') }}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg">Analytics</a>
+</div>
+{% endblock %}

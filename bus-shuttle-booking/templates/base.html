@@ -28,6 +28,9 @@
           {% if current_user.role in ('admin', 'operator') %}
             <a href="{{ url_for('admin_dashboard') }}" class="hover:underline">Admin</a>
           {% endif %}
+          {% if current_user.role == 'station_admin' %}
+            <a href="{{ url_for('station_dashboard') }}" class="hover:underline">Station</a>
+          {% endif %}
           {% if current_user.role == 'driver' %}
             <a href="{{ url_for('driver_assignments') }}" class="hover:underline">My Trips</a>
             <a href="{{ url_for('driver_earnings') }}" class="hover:underline">Earnings</a>
@@ -37,6 +40,7 @@
         {% else %}
           <a href="{{ url_for('login') }}" class="hover:underline">Login</a>
           <a href="{{ url_for('register') }}" class="hover:underline">Register</a>
+          <a href="{{ url_for('station_register') }}" class="hover:underline">Register Station</a>
         {% endif %}
       </div>
     </div>
