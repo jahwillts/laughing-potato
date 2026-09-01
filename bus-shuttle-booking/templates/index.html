@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}BusShuttle - Book Long-Distance Tickets{% endblock %}
+{% block content %}
+<div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 md:p-12 text-white text-center mb-8">
+  <h1 class="text-3xl md:text-5xl font-bold mb-4">Long-Distance Bus & Shuttle Booking</h1>
+  <p class="text-lg md:text-xl text-blue-100 mb-8">Search routes, pick your seat, and travel with confidence.</p>
+  <form action="{{ url_for('search') }}" method="get" class="max-w-4xl mx-auto bg-white text-slate-800 rounded-xl p-6 shadow-lg grid md:grid-cols-4 gap-4 items-end">
+    <div>
+      <label class="block text-left text-sm font-semibold mb-1">From</label>
+      <select name="origin_id" class="w-full border rounded p-2" required>
+        <option value="">Select origin</option>
+        {% for t in terminals %}
+          <option value="{{ t.id }}">{{ t.name }}, {{ t.city }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-left text-sm font-semibold mb-1">To</label>
+      <select name="destination_id" class="w-full border rounded p-2" required>
+        <option value="">Select destination</option>
+        {% for t in terminals %}
+          <option value="{{ t.id }}">{{ t.name }}, {{ t.city }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-left text-sm font-semibold mb-1">Date</label>
+      <input type="date" name="travel_date" class="w-full border rounded p-2" required min="{{ now().strftime('%Y-%m-%d') }}">
+    </div>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">Search Buses</button>
+  </form>
+</div>
+
+<div class="grid md:grid-cols-3 gap-6 text-center">
+  <div class="bg-white p-6 rounded-xl shadow">
+    <div class="text-3xl mb-2">🗺️</div>
+    <h3 class="font-bold text-lg">Route Search</h3>
+    <p class="text-slate-500 text-sm">Filter by origin, destination, date and bus class.</p>
+  </div>
+  <div class="bg-white p-6 rounded-xl shadow">
+    <div class="text-3xl mb-2">💺</div>
+    <h3 class="font-bold text-lg">Interactive Seat Map</h3>
+    <p class="text-slate-500 text-sm">Choose window, aisle or premium seats visually.</p>
+  </div>
+  <div class="bg-white p-6 rounded-xl shadow">
+    <div class="text-3xl mb-2">📱</div>
+    <h3 class="font-bold text-lg">QR Tickets</h3>
+    <p class="text-slate-500 text-sm">Download PDF tickets with QR codes for boarding.</p>
+  </div>
+</div>
+{% endblock %}

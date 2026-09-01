@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Scan Tickets{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-2">Ticket Scanner</h2>
+<p class="text-slate-500 mb-6">{{ schedule.route.origin.name }} &rarr; {{ schedule.route.destination.name }}</p>
+
+<div class="bg-white rounded-xl shadow p-6 mb-6">
+  <div id="reader" class="w-full max-w-md mx-auto mb-4"></div>
+  <div id="scan-result" class="text-center font-semibold mb-4"></div>
+</div>
+
+<div class="bg-white rounded-xl shadow p-6 max-w-md mx-auto">
+  <h3 class="font-bold mb-2">Manual Check-In</h3>
+  <form id="manual-form" class="flex gap-2">
+    <input type="text" id="ticket-input" placeholder="Ticket number" class="border rounded p-2 flex-1" required>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Check</button>
+  </form>
+  <div id="manual-result" class="mt-2 text-sm"></div>
+</div>
+
+<script>
+  const scheduleId = {{ schedule.id }};
+  async function checkTicket(ticketNumber) {
+    const form = new FormData();
+    form.append('ticket_number', ticketNumber);
+    form.append('schedule_id', scheduleId);
+    const res = await fetch('{{ url_for("api_scan") }}', { method: 'POST', body: form });
+    return res.json();
+  }
+
+  async function onScanSuccess(decodedText) {
+    const data = await checkTicket(decodedText);
+    const el = document.getElementById('scan-result');
+    el.textContent = data.ok ? `Checked in: ${data.passenger}` : `Error: ${data.message}`;
+    el.className = 'text-center font-semibold mb-4 ' + (data.ok ? 'text-green-600' : 'text-red-600');
+  }
+
+  function onScanFailure(error) { /* ignore */ }
+
+  if (typeof Html5Qrcode !== 'undefined') {
+    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanFailure).catch(() => {
+      document.getElementById('scan-result').textContent = 'Camera not available. Use manual entry.';
+    });
+  }
+
+  document.getElementById('manual-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const input = document.getElementById('ticket-input');
+    const data = await checkTicket(input.value.trim());
+    const el = document.getElementById('manual-result');
+    el.textContent = data.ok ? `Success: ${data.message} - ${data.passenger}` : `Error: ${data.message}`;
+    el.className = 'mt-2 text-sm ' + (data.ok ? 'text-green-600' : 'text-red-600');
+    if (data.ok) input.value = '';
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Fleet Management{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Fleet Allocation</h2>
+<table class="w-full bg-white rounded-xl shadow text-left text-sm mb-6">
+  <thead class="bg-slate-100"><tr><th class="p-3">Registration</th><th class="p-3">Model</th><th class="p-3">Seats</th><th class="p-3">Status</th><th class="p-3">Maintenance</th></tr></thead>
+  <tbody>
+    {% for b in buses %}
+    <tr class="border-t">
+      <td class="p-3">{{ b.registration }}</td>
+      <td class="p-3">{{ b.model or '-' }}</td>
+      <td class="p-3">{{ b.total_seats }}</td>
+      <td class="p-3 capitalize">{{ b.status }}</td>
+      <td class="p-3">
+        {% for m in b.maintenance %}
+          <div>{{ m.scheduled_date }} - {{ m.maintenance_type }} ({{ m.status }})</div>
+        {% else %}
+          <span class="text-slate-400">None</span>
+        {% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3 class="font-bold mb-2">Schedule Maintenance</h3>
+<div class="bg-white rounded-xl shadow p-4">
+  <form action="{{ url_for('admin_fleet_maintenance') }}" method="post" class="grid md:grid-cols-4 gap-4 items-end">
+    <select name="bus_id" class="border rounded p-2" required>
+      <option value="">Bus</option>
+      {% for b in buses %}<option value="{{ b.id }}">{{ b.registration }}</option>{% endfor %}
+    </select>
+    <input type="text" name="maintenance_type" placeholder="Type" class="border rounded p-2" required>
+    <input type="date" name="scheduled_date" class="border rounded p-2" required>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded">Schedule</button>
+  </form>
+</div>
+{% endblock %}

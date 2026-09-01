@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Search Results{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Available Trips</h2>
+<div class="bg-white rounded-xl shadow p-4 mb-6">
+  <form action="{{ url_for('search') }}" method="get" class="grid md:grid-cols-4 gap-4 items-end">
+    <div>
+      <label class="block text-sm font-semibold mb-1">From</label>
+      <select name="origin_id" class="w-full border rounded p-2" required>
+        {% for t in terminals %}
+          <option value="{{ t.id }}" {% if origin_id == t.id %}selected{% endif %}>{{ t.name }}, {{ t.city }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1">To</label>
+      <select name="destination_id" class="w-full border rounded p-2" required>
+        {% for t in terminals %}
+          <option value="{{ t.id }}" {% if destination_id == t.id %}selected{% endif %}>{{ t.name }}, {{ t.city }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1">Date</label>
+      <input type="date" name="travel_date" value="{{ travel_date }}" class="w-full border rounded p-2" required min="{{ now().strftime('%Y-%m-%d') }}">
+    </div>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">Search</button>
+  </form>
+</div>
+
+{% if schedules %}
+<div class="space-y-4">
+  {% for s in schedules %}
+    {% set available = s.seats | selectattr('status','equalto','available') | list | length %}
+    <div class="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <div class="font-bold text-lg">{{ s.route.origin.name }} &rarr; {{ s.route.destination.name }}</div>
+        <div class="text-sm text-slate-500">Departs {{ s.departure.strftime('%Y-%m-%d %H:%M') }} &bull; Arrives {{ s.arrival.strftime('%H:%M') }} &bull; Bus {{ s.bus.registration }}</div>
+        <div class="text-sm text-slate-500">{{ available }} seats available</div>
+      </div>
+      <div class="text-right">
+        <div class="text-2xl font-bold text-blue-600">${{ "%.2f"|format(s.route.base_price) }}</div>
+        <a href="{{ url_for('schedule_detail', schedule_id=s.id) }}" class="inline-block mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Select Seats</a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% else %}
+  <p class="text-slate-500">No trips found for this route and date.</p>
+{% endif %}
+{% endblock %}

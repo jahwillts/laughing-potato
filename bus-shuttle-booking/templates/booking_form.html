@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Passenger Details{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-2">Booking Details</h2>
+<p class="text-slate-500 mb-6">{{ schedule.route.origin.name }} &rarr; {{ schedule.route.destination.name }} on {{ schedule.departure.strftime('%Y-%m-%d %H:%M') }}</p>
+
+<form action="{{ url_for('create_booking', schedule_id=schedule.id) }}" method="post" class="bg-white rounded-xl shadow p-6">
+  <input type="hidden" name="seat_ids" value="{{ seats | map(attribute='id') | join(',') }}">
+  
+  <div class="grid md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-sm font-semibold mb-1">Contact Email</label>
+      <input type="email" name="contact_email" value="{{ current_user.email }}" class="w-full border rounded p-2" required>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1">Contact Phone</label>
+      <input type="tel" name="contact_phone" value="{{ current_user.phone or '' }}" class="w-full border rounded p-2">
+    </div>
+  </div>
+
+  <h3 class="font-bold mb-4">Passengers</h3>
+  <div class="space-y-4">
+    {% for seat in seats %}
+      <div class="border rounded-lg p-4 grid md:grid-cols-4 gap-4 items-end">
+        <div class="md:col-span-1 text-sm font-semibold">
+          Seat {{ seat.seat_number }} <span class="text-slate-500">({{ seat.seat_type }})</span>
+          <div class="text-blue-600">${{ "%.2f"|format(prices[seat.id]) }}</div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">First Name</label>
+          <input type="text" name="passenger_{{ seat.id }}_first_name" class="w-full border rounded p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Last Name</label>
+          <input type="text" name="passenger_{{ seat.id }}_last_name" class="w-full border rounded p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Luggage (kg)</label>
+          <input type="number" step="0.1" name="passenger_{{ seat.id }}_luggage_kg" value="0" min="0" class="w-full border rounded p-2">
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-6 flex justify-end">
+    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded">Confirm Booking</button>
+  </div>
+</form>
+{% endblock %}

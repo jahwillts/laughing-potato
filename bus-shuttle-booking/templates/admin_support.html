@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Support Tickets{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Support Tickets</h2>
+<div class="bg-white rounded-xl shadow overflow-hidden">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-slate-100"><tr><th class="p-3">User</th><th class="p-3">Subject</th><th class="p-3">Message</th><th class="p-3">Status</th><th class="p-3">Action</th></tr></thead>
+    <tbody>
+      {% for t in tickets %}
+      <tr class="border-t">
+        <td class="p-3">{{ t.user.full_name }}</td>
+        <td class="p-3">{{ t.subject }}</td>
+        <td class="p-3">{{ t.message }}</td>
+        <td class="p-3 capitalize">{{ t.status }}</td>
+        <td class="p-3">
+          {% if t.status == 'open' %}
+            <form action="{{ url_for('admin_support_resolve', ticket_id=t.id) }}" method="post">
+              <button type="submit" class="text-green-600 hover:underline">Resolve</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

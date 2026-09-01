@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Route Stops{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-2">Stops for {{ route.name or route.origin.name ~ ' - ' ~ route.destination.name }}</h2>
+<div class="bg-white rounded-xl shadow p-4 mb-6">
+  <form method="post" class="grid md:grid-cols-4 gap-4 items-end">
+    <select name="terminal_id" class="border rounded p-2" required>
+      <option value="">Select stop</option>
+      {% for t in terminals %}<option value="{{ t.id }}">{{ t.name }}, {{ t.city }}</option>{% endfor %}
+    </select>
+    <input type="number" name="stop_order" placeholder="Order" class="border rounded p-2" required>
+    <input type="number" name="scheduled_offset_min" placeholder="Offset minutes from origin" class="border rounded p-2">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded">Add Stop</button>
+  </form>
+</div>
+<table class="w-full bg-white rounded-xl shadow text-left text-sm">
+  <thead class="bg-slate-100"><tr><th class="p-3">Order</th><th class="p-3">Terminal</th><th class="p-3">City</th><th class="p-3">Offset</th></tr></thead>
+  <tbody>
+    {% for s in stops %}
+    <tr class="border-t"><td class="p-3">{{ s.stop_order }}</td><td class="p-3">{{ s.terminal.name }}</td><td class="p-3">{{ s.terminal.city }}</td><td class="p-3">{{ s.scheduled_offset_min }} min</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
