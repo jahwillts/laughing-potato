@@ -36,16 +36,13 @@
 </form>
 
 <script>
-  document.querySelectorAll('.seat.available').forEach(el => {
-    el.addEventListener('click', function(e) {
-      if (e.target.tagName !== 'INPUT') {
-        const cb = this.querySelector('input');
-        if (cb) { cb.checked = !cb.checked; this.classList.toggle('selected', cb.checked); }
-      }
-    });
-  });
+  function syncSeat(seat) {
+    const cb = seat.querySelector('.seat-check');
+    if (cb) seat.classList.toggle('selected', cb.checked);
+  }
   document.querySelectorAll('.seat-check').forEach(cb => {
-    cb.addEventListener('change', function() { this.closest('.seat').classList.toggle('selected', this.checked); });
+    cb.addEventListener('change', function() { syncSeat(this.closest('.seat')); });
+    syncSeat(cb.closest('.seat'));
   });
 </script>
 {% endblock %}

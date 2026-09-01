@@ -11,9 +11,9 @@
 
 <div class="bg-white rounded-xl shadow p-6 max-w-md mx-auto">
   <h3 class="font-bold mb-2">Manual Check-In</h3>
-  <form id="manual-form" class="flex gap-2">
+  <form id="manual-form" class="flex gap-2" onsubmit="return false;">
     <input type="text" id="ticket-input" placeholder="Ticket number" class="border rounded p-2 flex-1" required>
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Check</button>
+    <button type="button" id="manual-check" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Check</button>
   </form>
   <div id="manual-result" class="mt-2 text-sm"></div>
 </div>
@@ -44,14 +44,19 @@
     });
   }
 
-  document.getElementById('manual-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+  async function doManualCheck() {
     const input = document.getElementById('ticket-input');
+    if (!input.value.trim()) return;
     const data = await checkTicket(input.value.trim());
     const el = document.getElementById('manual-result');
     el.textContent = data.ok ? `Success: ${data.message} - ${data.passenger}` : `Error: ${data.message}`;
     el.className = 'mt-2 text-sm ' + (data.ok ? 'text-green-600' : 'text-red-600');
-    if (data.ok) input.value = '';
+    if (data.ok) { input.value = ''; input.focus(); }
+  }
+
+  document.getElementById('manual-check').addEventListener('click', doManualCheck);
+  document.getElementById('ticket-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); doManualCheck(); }
   });
 </script>
 {% endblock %}
