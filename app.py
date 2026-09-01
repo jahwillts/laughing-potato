@@ -370,16 +370,27 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    schools = School.query.order_by(School.name).all()
+    selected_school = None
     if request.method == 'POST':
+        school_id = request.form.get('school_id', type=int)
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
+        school = School.query.get(school_id) if school_id else None
+        user = User.query.filter_by(email=email, school_id=school.id).first() if school else None
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
             flash(f'Welcome, {user.full_name}!', 'success')
             return redirect(url_for('dashboard'))
-        flash('Invalid email or password.', 'danger')
-    return render_template('login.html')
+        if not school:
+            flash('Please select a registered school.', 'danger')
+        else:
+            flash('Invalid email or password for the selected school.', 'danger')
+        selected_school = school
+    else:
+        selected_id = request.args.get('school_id', type=int)
+        selected_school = School.query.get(selected_id) if selected_id else (schools[0] if schools else None)
+    return render_template('login.html', schools=schools, school=selected_school)
 
 @app.route('/logout')
 @login_required
