@@ -2,13 +2,19 @@
 {% block title %}Users - {{ school.name }}{% endblock %}
 {% block content %}
 <div class="card">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
         <h2 class="text-2xl font-bold">Users</h2>
-        <div class="text-sm text-slate-600">Filter by role to see specific users</div>
+        <div class="flex flex-wrap gap-2 text-sm">
+            <a href="{{ url_for('users_view') }}" class="px-3 py-1 rounded-full {{ 'bg-indigo-600 text-white' if not active_role else 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">All</a>
+            <a href="{{ url_for('users_view', role='student') }}" class="px-3 py-1 rounded-full {{ 'bg-indigo-600 text-white' if active_role == 'student' else 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Students</a>
+            <a href="{{ url_for('users_view', role='teacher') }}" class="px-3 py-1 rounded-full {{ 'bg-indigo-600 text-white' if active_role == 'teacher' else 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Teachers</a>
+            <a href="{{ url_for('users_view', role='parent') }}" class="px-3 py-1 rounded-full {{ 'bg-indigo-600 text-white' if active_role == 'parent' else 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Parents</a>
+            <a href="{{ url_for('users_view', role='admin') }}" class="px-3 py-1 rounded-full {{ 'bg-indigo-600 text-white' if active_role == 'admin' else 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Admins</a>
+        </div>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
-            <thead class="bg-slate-100"><tr><th>Name</th><th>Email</th><th>Role</th><th>Class</th><th>Photo</th></tr></thead>
+            <thead class="bg-slate-100"><tr><th>Name</th><th>Email</th><th>Role</th><th>Class</th><th>Photo</th><th>Action</th></tr></thead>
             <tbody>
                 {% for u in users %}
                 <tr class="border-b">
@@ -16,7 +22,8 @@
                     <td>{{ u.email }}</td>
                     <td class="capitalize">{{ u.role }}</td>
                     <td>{{ u.class_.name if u.class_ else '' }}</td>
-                    <td>{% if u.photo %}<img src="{{ url_for('static', filename=u.photo) }}" class="h-8 w-8 rounded-full object-cover">{% endif %}</td>
+                    <td>{% if u.photo %}<img src="{{ url_for('static', filename=u.photo) }}" alt="" class="h-8 w-8 rounded-full object-cover">{% endif %}</td>
+                    <td><a href="{{ url_for('user_profile', user_id=u.id) }}" class="text-indigo-600 hover:underline">View</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
